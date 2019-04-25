@@ -1,0 +1,466 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Examples &mdash; XGeo  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API reference" href="api.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> XGeo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#geotransform">Geotransform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projection-coordinate-reference-system-crs">Projection / Coordinate Reference System (CRS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#origin-of-dataset">Origin of Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reproject-data">Reproject data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#subset-data">Subset Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generate-statistics">Generate Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generate-zonal-statistics">Generate Zonal Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sample-pixels">Sample Pixels</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Help &amp; reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">XGeo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Examples</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/examples.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>The examples in this page will guide you through the functionality of the xgeo.</p>
+<p>Firstly, let’s import the necessary libraries and open a data</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xgeo</span> <span class="c1"># Needs to be imported to use geo extension</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s2">&quot;data.nc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The code-blocks in the rest of the examples will start after the code-block presented above unless and otherwise
+mentioned.</p>
+<div class="section" id="geotransform">
+<h2>Geotransform<a class="headerlink" href="#geotransform" title="Permalink to this headline">¶</a></h2>
+<p>The geotransform of the dataset is given by the <cite>transform</cite> attribute. It can be accessed as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">transform</span>
+<span class="go">(0.022222222222183063, 0, -179.99999999999997, 0, -0.022222222222239907, 90.00000000000001)</span>
+</pre></div>
+</div>
+<p>User can also assign different geotransform. In such a case, the coordinates of the dataset will be recalculated to
+comply with the changed transform. The transform can be set as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0111</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0111</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="projection-coordinate-reference-system-crs">
+<h2>Projection / Coordinate Reference System (CRS)<a class="headerlink" href="#projection-coordinate-reference-system-crs" title="Permalink to this headline">¶</a></h2>
+<p>The projection/CRS of the Dataset is given by the <cite>projection</cite> attribute. XGeo converts and stores the crs system
+of the dataset into the proj4 string. The CRS can be accessed as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">projection</span>
+<span class="go">&#39;+init=epsg:4326&#39;</span>
+</pre></div>
+</div>
+<p>User can also assign different crs system. The assignment can be done in multiple format. User can provide CRS in WKT,
+EPSG or PROJ4 system.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The assignment of new CRS system doesn’t reproject to it. Main purpose of this assignment is to
+provide CRS to dataset, in case of missing CRS system in dataset.</p>
+</div>
+<p>The CRS can be assigned as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">projection</span> <span class="o">=</span> <span class="mi">4326</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="origin-of-dataset">
+<h2>Origin of Dataset<a class="headerlink" href="#origin-of-dataset" title="Permalink to this headline">¶</a></h2>
+<p>The origin of the Dataset is given in human readable format by <cite>origin</cite> attribute. The origin can be any one of
+<cite>top_left</cite>, <cite>top_right</cite>, <cite>bottom_left</cite>, <cite>bottom_right</cite>. The origin can be accessed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">origin</span>
+<span class="go">&#39;top_left&#39;</span>
+</pre></div>
+</div>
+<p>User can also assign different origin to the Dataset. In such a case, the data and attributes are adjusted
+accordingly to match with the new orign. The origin can be changed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="s2">&quot;bottom_right&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="reproject-data">
+<h2>Reproject data<a class="headerlink" href="#reproject-data" title="Permalink to this headline">¶</a></h2>
+<p>All the raster data (DataArrays) in the dataset can be reprojected to the new projection system by simply calling the
+reproject function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dsout</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">reproject</span><span class="p">(</span><span class="n">target_crs</span><span class="o">=</span><span class="mi">3857</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The result of the reprojection can be seen in two images below.</p>
+<p><a class="reference internal" href="_images/data_4326.png"><img alt="data_4326" src="_images/data_4326.png" style="width: 45%;" /></a> &gt;&gt; <a class="reference internal" href="_images/data_3857.png"><img alt="data_3857" src="_images/data_3857.png" style="width: 45%;" /></a></p>
+</div>
+<div class="section" id="subset-data">
+<h2>Subset Data<a class="headerlink" href="#subset-data" title="Permalink to this headline">¶</a></h2>
+<p>Xgeo provides two method to subset data. One method provides a mechanism to subset data with vector file while other
+method allow user to slice the dataset using indices or bounds. The method providing vector file based subsetting is
+called <cite>subset</cite> while the other is called <cite>slice_dataset</cite>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dsout</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">vector_file</span><span class="o">=</span><span class="s1">&#39;vector.shp&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="_images/data_togo.png"><img alt="full_data" src="_images/data_togo.png" style="width: 45%;" /></a>  &gt;&gt; <a class="reference internal" href="_images/data_togo_clipped.png"><img alt="clipped_data" src="_images/data_togo_clipped.png" style="width: 45%;" /></a></p>
+<p>In the example above, the size of both input and output dataset is same. However, if user want the output dataset to
+fit the total bound of the vectors, it can be achieved through:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dsout</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">vector_file</span><span class="o">=</span><span class="s1">&#39;vector.shp&#39;</span><span class="p">,</span><span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="_images/data_togo_clipped_crop.png"><img alt="clipped_crop_data" src="_images/data_togo_clipped_crop.png" style="width: 45%;" /></a></p>
+</div>
+<div class="section" id="generate-statistics">
+<h2>Generate Statistics<a class="headerlink" href="#generate-statistics" title="Permalink to this headline">¶</a></h2>
+<p>The general statistics min, max, mean and standard deviations for each band and each dataset can be calculated as
+follow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">stats</span><span class="p">()</span>
+<span class="go">             data_mean     data_std  data_min  data_max</span>
+<span class="go">band time</span>
+<span class="go">1    0      508.532965   573.045988         1     17841</span>
+<span class="go">2    0      826.767885   529.762916        10     16856</span>
+<span class="go">3    0      776.372960   622.791312        23     16241</span>
+<span class="go">4    0     1233.895797   472.069397       129     12374</span>
+<span class="go">5    0     2107.471764   492.178186       140     11863</span>
+<span class="go">6    0     2343.641019   553.738875       148     12101</span>
+<span class="go">7    0     2287.690683   620.665450       125     15630</span>
+<span class="go">8    0     2534.175579   596.514672        87     12540</span>
+<span class="go">9    0     2040.396011   737.076977       148     14817</span>
+<span class="go">10   0     1480.038654  1183.614634       100     15092</span>
+</pre></div>
+</div>
+<p>The function returns a pandas dataframe with the statics to provide user with more flexibility to manipulate the output
+of the statistics.</p>
+</div>
+<div class="section" id="generate-zonal-statistics">
+<h2>Generate Zonal Statistics<a class="headerlink" href="#generate-zonal-statistics" title="Permalink to this headline">¶</a></h2>
+<p>The zonal statistics min, max, mean and standard deviations for each band and each dataset can be calculated as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">zonal_stats</span><span class="p">(</span><span class="n">vector_file</span><span class="o">=</span><span class="s1">&#39;vector.shp&#39;</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">)</span>
+<span class="go">                              data</span>
+<span class="go">class time band stat</span>
+<span class="go">1     0    1    mean    394.727040</span>
+<span class="go">                std     536.226651</span>
+<span class="go">                min       1.000000</span>
+<span class="go">                max   11437.000000</span>
+<span class="go">2     0    1    mean    845.517894</span>
+<span class="go">                std     874.189620</span>
+<span class="go">                min       1.000000</span>
+<span class="go">                max   10162.000000</span>
+<span class="go">3     0    1    mean    250.684041</span>
+<span class="go">                std     114.707457</span>
+<span class="go">                min     140.000000</span>
+<span class="go">                max    1166.000000</span>
+<span class="go">1     0    2    mean    735.645520</span>
+<span class="go">                std     512.267703</span>
+<span class="go">                min      10.000000</span>
+<span class="go">                max   12409.000000</span>
+<span class="go">2     0    2    mean   1148.695677</span>
+<span class="go">                std     799.273444</span>
+<span class="go">                min     121.000000</span>
+<span class="go">                max    8882.000000</span>
+<span class="go">3     0    2    mean    642.283655</span>
+<span class="go">                std     111.673970</span>
+<span class="go">                min     474.000000</span>
+<span class="go">                max    1488.000000</span>
+<span class="go">1     0    3    mean    668.089339</span>
+<span class="go">                std     725.145967</span>
+<span class="go">                min      23.000000</span>
+<span class="go">                max   12289.000000</span>
+<span class="go">2     0    3    mean   1166.711904</span>
+<span class="go">                std     927.510453</span>
+<span class="go">                            ...</span>
+<span class="go">           8    min     387.000000</span>
+<span class="go">                max    9246.000000</span>
+<span class="go">3     0    8    mean   3075.893308</span>
+<span class="go">                std     259.402703</span>
+<span class="go">                min    1622.000000</span>
+<span class="go">                max    3950.000000</span>
+<span class="go">1     0    9    mean   1903.334876</span>
+<span class="go">                std     903.854786</span>
+<span class="go">                min     180.000000</span>
+<span class="go">                max   12004.000000</span>
+<span class="go">2     0    9    mean   2457.078426</span>
+<span class="go">                std    1509.694257</span>
+<span class="go">                min     247.000000</span>
+<span class="go">                max   14817.000000</span>
+<span class="go">3     0    9    mean   1946.978378</span>
+<span class="go">                std     156.187383</span>
+<span class="go">                min    1067.000000</span>
+<span class="go">                max    2661.000000</span>
+<span class="go">1     0    10   mean   1197.950185</span>
+<span class="go">                std    1093.367547</span>
+<span class="go">                min     145.000000</span>
+<span class="go">                max   13230.000000</span>
+<span class="go">2     0    10   mean   2227.742274</span>
+<span class="go">                std    2436.064617</span>
+<span class="go">                min     182.000000</span>
+<span class="go">                max   15088.000000</span>
+<span class="go">3     0    10   mean    997.758945</span>
+<span class="go">                std     126.103658</span>
+<span class="go">                min     529.000000</span>
+<span class="go">                max    1552.000000</span>
+<span class="go">[120 rows x 1 columns]</span>
+</pre></div>
+</div>
+<p>The column names are generated in convention <cite>&lt;vector_value&gt;_&lt;dataset&gt;_&lt;variable&gt;</cite>. If <cite>value_name</cite> isn’t provided, the
+method takes the id of each polygon as the value_name. In such a case, the statistics will be calculated for each polygon.</p>
+</div>
+<div class="section" id="sample-pixels">
+<h2>Sample Pixels<a class="headerlink" href="#sample-pixels" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">vector_file</span><span class="o">=</span><span class="s1">&#39;vector.shp&#39;</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">)</span>
+<span class="go">                                            data</span>
+<span class="go"> class x             y            time band</span>
+<span class="go">1.0   261009.452737 9.850486e+06 0.0  1.0   183.0</span>
+<span class="go">                    9.850476e+06 0.0  1.0   195.0</span>
+<span class="go">      261019.451371 9.850496e+06 0.0  1.0   214.0</span>
+<span class="go">                    9.850486e+06 0.0  1.0   211.0</span>
+<span class="go">                    9.850476e+06 0.0  1.0   177.0</span>
+<span class="go">                    9.850466e+06 0.0  1.0   195.0</span>
+<span class="go">                    9.850456e+06 0.0  1.0   185.0</span>
+<span class="go">                    9.850446e+06 0.0  1.0   193.0</span>
+<span class="go">      261029.450005 9.850506e+06 0.0  1.0   197.0</span>
+<span class="go">                    9.850496e+06 0.0  1.0   199.0</span>
+<span class="go">                    9.850486e+06 0.0  1.0   231.0</span>
+<span class="go">                    9.850476e+06 0.0  1.0   195.0</span>
+<span class="go">                    9.850466e+06 0.0  1.0   205.0</span>
+<span class="go">                    9.850456e+06 0.0  1.0   205.0</span>
+<span class="go">                    9.850446e+06 0.0  1.0   217.0</span>
+<span class="go">                    9.850436e+06 0.0  1.0   226.0</span>
+<span class="go">                    9.850426e+06 0.0  1.0   238.0</span>
+<span class="go">      261039.448639 9.850526e+06 0.0  1.0   222.0</span>
+<span class="go">                    9.850516e+06 0.0  1.0   213.0</span>
+<span class="go">                    9.850506e+06 0.0  1.0   202.0</span>
+<span class="go">                    9.850496e+06 0.0  1.0   189.0</span>
+<span class="go">                    9.850486e+06 0.0  1.0   198.0</span>
+<span class="go">                    9.850476e+06 0.0  1.0   192.0</span>
+<span class="go">                    9.850466e+06 0.0  1.0   164.0</span>
+<span class="go">                    9.850456e+06 0.0  1.0   179.0</span>
+<span class="go">                    9.850446e+06 0.0  1.0   211.0</span>
+<span class="go">                    9.850436e+06 0.0  1.0   220.0</span>
+<span class="go">                    9.850426e+06 0.0  1.0   229.0</span>
+<span class="go">                    9.850416e+06 0.0  1.0   217.0</span>
+<span class="go">                    9.850406e+06 0.0  1.0   201.0</span>
+<span class="go">                                           ...</span>
+<span class="go">3.0   264908.920002 9.847826e+06 0.0  10.0  840.0</span>
+<span class="go">                    9.847816e+06 0.0  10.0  845.0</span>
+<span class="go">                    9.847806e+06 0.0  10.0  850.0</span>
+<span class="go">                    9.847796e+06 0.0  10.0  854.0</span>
+<span class="go">                    9.847786e+06 0.0  10.0  855.0</span>
+<span class="go">                    9.847776e+06 0.0  10.0  850.0</span>
+<span class="go">                    9.847766e+06 0.0  10.0  844.0</span>
+<span class="go">                    9.847756e+06 0.0  10.0  836.0</span>
+<span class="go">                    9.847746e+06 0.0  10.0  836.0</span>
+<span class="go">                    9.847736e+06 0.0  10.0  846.0</span>
+<span class="go">                    9.847726e+06 0.0  10.0  850.0</span>
+<span class="go">                    9.847716e+06 0.0  10.0  850.0</span>
+<span class="go">                    9.847706e+06 0.0  10.0  854.0</span>
+<span class="go">                    9.847696e+06 0.0  10.0  860.0</span>
+<span class="go">                    9.847686e+06 0.0  10.0  879.0</span>
+<span class="go">                    9.847676e+06 0.0  10.0  911.0</span>
+<span class="go">                    9.847666e+06 0.0  10.0  953.0</span>
+<span class="go">      264918.918636 9.847786e+06 0.0  10.0  858.0</span>
+<span class="go">                    9.847776e+06 0.0  10.0  853.0</span>
+<span class="go">                    9.847766e+06 0.0  10.0  845.0</span>
+<span class="go">                    9.847756e+06 0.0  10.0  833.0</span>
+<span class="go">                    9.847746e+06 0.0  10.0  831.0</span>
+<span class="go">                    9.847736e+06 0.0  10.0  840.0</span>
+<span class="go">                    9.847726e+06 0.0  10.0  846.0</span>
+<span class="go">                    9.847716e+06 0.0  10.0  850.0</span>
+<span class="go">                    9.847706e+06 0.0  10.0  858.0</span>
+<span class="go">                    9.847696e+06 0.0  10.0  871.0</span>
+<span class="go">                    9.847686e+06 0.0  10.0  888.0</span>
+<span class="go">                    9.847676e+06 0.0  10.0  907.0</span>
+<span class="go">                    9.847666e+06 0.0  10.0  921.0</span>
+<span class="go">[761450 rows x 1 columns]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api.html" class="btn btn-neutral float-right" title="API reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Abhishek Manandhar, Stefan Kirmaier
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

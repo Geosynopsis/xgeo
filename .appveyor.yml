@@ -1,0 +1,29 @@
+branches:
+  only:
+    - master
+
+environment:
+  PYTHONUNBUFFERED: 1
+  MINICONDA: C:\\Miniconda3-x64
+  matrix:
+    - PYTHON_VERSION: 3.7
+    - PYTHON_VERSION: 3.6
+
+
+platform:
+  - x64
+
+install:
+  - mkdir mkdir C:\Users\appveyor\.conda
+  - call %MINICONDA%\Scripts\activate.bat
+  - conda config --set always_yes yes --set changeps1 no --set auto_update_conda no --set safety_checks disabled
+#  - conda info -a
+  - conda config --add channels conda-forge
+  - conda install --yes python=%PYTHON_VERSION% pytest
+  - conda install --yes --file requirements.txt
+  - python setup.py install
+
+build: false
+test_script:
+  - cmd: pytest
+

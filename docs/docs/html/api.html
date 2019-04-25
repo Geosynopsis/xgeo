@@ -1,0 +1,682 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API reference &mdash; XGeo  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Examples" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> XGeo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Help &amp; reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#xgeodatasetaccessor">XGeoDatasetAccessor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#xcrs">XCRS</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">XGeo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>API reference</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="api-reference">
+<h1>API reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
+<p>This page lists the generated API reference to the library.</p>
+<div class="section" id="xgeodatasetaccessor">
+<h2>XGeoDatasetAccessor<a class="headerlink" href="#xgeodatasetaccessor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="xgeo.raster.XGeoDatasetAccessor">
+<em class="property">class </em><code class="descclassname">xgeo.raster.</code><code class="descname">XGeoDatasetAccessor</code><span class="sig-paren">(</span><em>xarray_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>XGeoDatasetAccessor adds the geospatial functionalities to the xarray Dataset. The accessor makes use of the
+versatility of xarray together with the geospatial operations provided by rasterio together with many custom
+operations that are used in general day to day task in the geospatial world.</p>
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.add_mask">
+<code class="descname">add_mask</code><span class="sig-paren">(</span><em>vector_file</em>, <em>geometry_name='geometry'</em>, <em>value_name=None</em>, <em>mask_name='mask'</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.add_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rasterizes the vector_file and add the mask as coordinate with name mask_name to the Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_file</strong> (<em>str</em><em> or </em><em>geopandas.Dataframe</em>) – Vector file which need to be rasterized and added as mask</p></li>
+<li><p><strong>geometry_name</strong> (<em>str</em>) – Name of geometry column in vector file if it doesn’t default to “geometry”</p></li>
+<li><p><strong>value_name</strong> (<em>str</em>) – Name of the value column, its value will be used to fill the raster. If None, all values in geometry is
+filled with 1</p></li>
+<li><p><strong>mask_name</strong> (<em>str</em>) – Name of the mask index</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.band_coords">
+<code class="descname">band_coords</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.band_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the band coordinates of the Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>bandcoords</strong> – Band coordinates of the Dataset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.DataArray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.band_dim">
+<code class="descname">band_dim</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.band_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets name of band dimension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>band_dim</strong> – Name of the band dimension</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.band_size">
+<code class="descname">band_size</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.band_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the size of band dimension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>bands</strong> – Size of band dimension</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.bounds">
+<code class="descname">bounds</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the bounds of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>bounds</strong> – Bounds of the data (left, bottom, right, top)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.origin">
+<code class="descname">origin</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the origin of the Dataset in human readable format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>origin</strong> – Origin of the Dataset.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.projection">
+<code class="descname">projection</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.projection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the projection/CRS system of the Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>projection</strong> – Projection/CRS in proj4 string</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.reproject">
+<code class="descname">reproject</code><span class="sig-paren">(</span><em>data_var=None</em>, <em>target_crs=None</em>, <em>resolution=None</em>, <em>resampling=None</em>, <em>target_height=None</em>, <em>target_width=None</em>, <em>source_nodata=None</em>, <em>target_nodata=None</em>, <em>memory_limit=0</em>, <em>threads=None</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.reproject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reprojects and resamples the Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_var</strong> (<em>str</em>) – The raster DataArray to be reprojected. Defaults to all</p></li>
+<li><p><strong>target_crs</strong> (<em>int</em><em> or </em><em>string</em><em> or </em><em>dict</em>) – Target projection/CRS system the DataSet should be reprojected to</p></li>
+<li><p><strong>resolution</strong> (<em>int</em><em> or </em><em>float</em><em> (</em><em>Optional</em><em>)</em>) – Target resolution</p></li>
+<li><p><strong>resampling</strong> (<em>rasterio.warp.Resampling</em><em> or </em><em>string</em>) – Resampling method to be used. Default is ‘nearest’</p></li>
+<li><p><strong>target_height</strong> (<em>int</em><em> (</em><em>Optional</em><em>)</em>) – Target height</p></li>
+<li><p><strong>target_width</strong> (<em>int</em><em> (</em><em>Optional</em><em>)</em>) – Target width</p></li>
+<li><p><strong>source_nodata</strong> (<em>int</em><em> or </em><em>float</em><em> (</em><em>Optional</em><em>)</em>) – Source NoData value</p></li>
+<li><p><strong>target_nodata</strong> (<em>int</em><em> or </em><em>float</em><em> (</em><em>Optional</em><em>)</em>) – Target NoData value</p></li>
+<li><p><strong>memory_limit</strong> (<em>int</em><em> (</em><em>Optional</em><em>)</em>) – Maximum memory the process should use. Defaults to 64MB</p></li>
+<li><p><strong>threads</strong> (<em>int</em><em> (</em><em>Optional</em><em>)</em>) – Number of threads the process should use. Defaults to number of CPU.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>dsout</strong> – Dataset with the reprojected rasters.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xgeo</span>  <span class="c1"># In order to use the xgeo accessor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="s1">&#39;test.tif&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds_reprojected</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">reproject</span><span class="p">(</span><span class="n">target_crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.resolutions">
+<code class="descname">resolutions</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.resolutions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the resolutions of the DataArrays in Dataset. If the resolutions don’t exist, it calculates the
+resolutions from the current coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>resolutions</strong> – x and y resolutions of the DataArrays.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.sample">
+<code class="descname">sample</code><span class="sig-paren">(</span><em>vector_file</em>, <em>geometry_name='geometry'</em>, <em>value_name='id'</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the pixel for the given regions. Each sample pixel have all the data values for each timestamp and
+each band.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_file</strong> (<em>str</em>) – Name of the vector file to be used for the sampling. The vector file can be any one supported by geopandas.</p></li>
+<li><p><strong>geometry_name</strong> (<em>str</em>) – Name of the geometry in the vector file, if it doesn’t default to ‘geometry’”</p></li>
+<li><p><strong>value_name</strong> (<em>str</em>) – Name of the value of each region. This value will be associated with each pixels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>samples</strong> – Samples of pixels contained and touched by each regions in pandas.Dataframe.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xgeo</span>  <span class="c1"># In order to use the xgeo accessor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="s1">&#39;test.tif&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_sample</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">vector_file</span><span class="o">=</span><span class="s1">&#39;test.shp&#39;</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">&quot;class&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.slice_dataset">
+<code class="descname">slice_dataset</code><span class="sig-paren">(</span><em>indices=None</em>, <em>bounds=None</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.slice_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subsets Dataset either with indices or bounds.
+:param indices: Indices (row_x_min, col_y_min, row_x_max, col_y_max)
+:type indices: tuple/list
+:param bounds: Bounds (x_min, y_min, x_max, y_max)
+:type bounds: tuple/list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>ds</strong> – Dataset with data in given bounds or indices</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.stats">
+<code class="descname">stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates general statistics mean, standard deviation, max, min of for each band.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>statistics</strong> – DataFrame with  statistics</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.subset">
+<code class="descname">subset</code><span class="sig-paren">(</span><em>vector_file</em>, <em>geometry_name='geometry'</em>, <em>crop=False</em>, <em>extent_only=False</em>, <em>invert=False</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.subset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subset the Dataset with the vector file.
+:param vector_file: Path to the vector file. Any vector file supported by GDAL are supported.
+:type vector_file: str or geopandas.GeoDataFrame
+:param geometry_name: Column name that describes the geometries in the vector file. Default value is “geometry”
+:type geometry_name: str
+:param crop: If True, the output Dataset bounds is approximately equal to the total bounds of the geometry. The</p>
+<blockquote>
+<div><p>default value is False</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>extent_only</strong> (<em>bool</em>) – If True, the output Dataset consists all the data that are within the total bounds of the geometry.
+Default value is True. If extent_only is True, the crop is by default True.</p></li>
+<li><p><strong>invert</strong> (<em>bool</em>) – If True, the output GeoDataset contains values that are only outside of the geometries. Default value is
+False. This doesn’t have effect if extent_only is True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ds_subset</strong> – Subset dataset</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.time_coords">
+<code class="descname">time_coords</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.time_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the time coordinates of the Dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>timecoords</strong> – Time coordinates of the Dataset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.DataArray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.time_dim">
+<code class="descname">time_dim</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.time_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets name of time dimension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>time_dim</strong> – Name of the time dimension</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.time_size">
+<code class="descname">time_size</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.time_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the size of time dimension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>times</strong> – Size of time dimension</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.to_geotiff">
+<code class="descname">to_geotiff</code><span class="sig-paren">(</span><em>output_path='.'</em>, <em>file_prefix='data'</em>, <em>overviews=False</em>, <em>bigtiff=True</em>, <em>compress='lzw'</em>, <em>tiled=True</em>, <em>num_threads='ALL_CPUS'</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.to_geotiff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates one or multiple Geotiffs for the Dataset. If the Dataset has muliple raster arrays or raster arrays for
+multiple timestamps, separate geotiffs are created in following path:</p>
+<blockquote>
+<div><p>output_path/&lt;file_prifix&gt;_&lt;variable_nane&gt;_&lt;timestamp&gt;.tif</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> (<em>str</em>) – Output directory for the files.</p></li>
+<li><p><strong>file_prefix</strong> (<em>str</em>) – Prefix for the filename</p></li>
+<li><p><strong>overviews</strong> (<em>bool</em>) – Creates image overviews if True.</p></li>
+<li><p><strong>bigtiff</strong> (<em>bool</em>) – Creates BigTiff if True</p></li>
+<li><p><strong>compress</strong> (<em>str</em>) – Compression algorithm to apply, default ‘lzw’</p></li>
+<li><p><strong>tiled</strong> (<em>bool</em>) – The tif is tiled if True</p></li>
+<li><p><strong>num_threads</strong> (<em>int</em><em> or </em><em>str</em>) – The number of threads the process should use. Default is ‘ALL_CPUS’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.transform">
+<code class="descname">transform</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the geo-transform of the Dataset. If the transform isn’t present, it calculate the transform from the
+current coordinates of Dataset.
+:returns: <strong>transform</strong> – Geo-transform (x resolution, 0, x origin, 0, y resolution, y origin)
+:rtype: tuple</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.validate_and_restructure">
+<code class="descname">validate_and_restructure</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.validate_and_restructure" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Validates and restructures the dataset to make full utilization of GeoDataset.</dt><dd><ul class="simple">
+<li><p>Validates if x and y dimensions exists</p></li>
+<li><dl class="simple">
+<dt>Validates if band and time dimension exists. If they don’t exist, it adds those dimensions to the raster</dt><dd><p>DataArrays</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>dsout</strong> – A copy of original dataset restructured to have all raster DataArray in 4 dimensional format. It allows
+the library to be consistent over its operations.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.x_coords">
+<code class="descname">x_coords</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.x_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the X coordinates.
+:returns: <strong>xcoords</strong> – X coordinates of the Dataset
+:rtype: xarray.DataArray</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.x_dim">
+<code class="descname">x_dim</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.x_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets name of X dimension
+:returns: <strong>x_dim</strong> – Name of the X dimension
+:rtype: str</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.x_size">
+<code class="descname">x_size</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.x_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the size of X dimension
+:returns: <strong>xsize</strong> – Size of X dimension
+:rtype: int</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.y_coords">
+<code class="descname">y_coords</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.y_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the Y coordinates of the Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>ycoords</strong> – Y Coordinates of the Dataset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xarray.DataArray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.y_dim">
+<code class="descname">y_dim</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.y_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets name of Y dimension
+:returns: <strong>y_dim</strong> – Name of the y dimension
+:rtype: str</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xgeo.raster.XGeoDatasetAccessor.y_size">
+<code class="descname">y_size</code><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.y_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the size of Y dimension
+:returns: <strong>ysize</strong> – Size of Y dimension
+:rtype: int</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xgeo.raster.XGeoDatasetAccessor.zonal_stats">
+<code class="descname">zonal_stats</code><span class="sig-paren">(</span><em>vector_file</em>, <em>geometry_name='geometry'</em>, <em>value_name='id'</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.raster.XGeoDatasetAccessor.zonal_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates statistics for regions in the vector file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector_file</strong> (<em>str</em><em> or </em><em>geopandas.GeoDataFrame</em>) – Vector file with regions/zones for which statistics needs to be calculated</p></li>
+<li><p><strong>geometry_name</strong> (<em>str</em>) – Name of the geometry column in vector file. Default is “geometry”</p></li>
+<li><p><strong>value_name</strong> (<em>str</em>) – Name of the value column for each of which the statistics need to be calculated. Default is “id”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>zonal_statistics</strong> – DataFrame with Statistics</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="xcrs">
+<h2>XCRS<a class="headerlink" href="#xcrs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="xgeo.crs.XCRS">
+<em class="property">class </em><code class="descclassname">xgeo.crs.</code><code class="descname">XCRS</code><span class="sig-paren">(</span><em>initialdata=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.crs.XCRS" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="xgeo.crs.XCRS.from_any">
+<em class="property">classmethod </em><code class="descname">from_any</code><span class="sig-paren">(</span><em>proj: dict</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.crs.XCRS.from_any" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes CRS from any supported system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>proj</strong> (<em>dict</em><em> or </em><em>str</em><em> or </em><em>int</em>) – Projection in PROJ, EPSG, WKT or CF.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>CRS</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#xgeo.crs.XCRS" title="xgeo.crs.XCRS">XCRS</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="xgeo.crs.XCRS.from_cf_dict">
+<em class="property">classmethod </em><code class="descname">from_cf_dict</code><span class="sig-paren">(</span><em>cf_dict: dict</em><span class="sig-paren">)</span><a class="headerlink" href="#xgeo.crs.XCRS.from_cf_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes CRS from Climate and Forecast Convention grid_mapping</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cf_dict</strong> (<em>dict</em>) – CF grid_mapping in dictionary format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>CRS</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#xgeo.crs.XCRS" title="xgeo.crs.XCRS">XCRS</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Abhishek Manandhar, Stefan Kirmaier
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
