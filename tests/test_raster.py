@@ -1,10 +1,10 @@
 from pathlib import Path
-import numpy.testing as nt
-import xarray.testing as xt
-import numpy as np
-import pytest
 
+import numpy as np
+import numpy.testing as nt
+import pytest
 import xarray as xr
+import xarray.testing as xt
 import xgeo
 from xgeo.crs import XCRS
 
