@@ -1,129 +1,205 @@
-import os
-import pytest
-import numpy as np
+from pathlib import Path
 import numpy.testing as nt
+import xarray.testing as xt
+import numpy as np
+import pytest
 
+import xarray as xr
 import xgeo
 from xgeo.crs import XCRS
-import xarray as xr
 
-here = os.path.dirname(__file__)
-datapath = os.path.join(here, "data")
+here = Path(__file__).parent
+datapath = here / "data"
 
-zones_shp = os.path.join(datapath, "zones.shp")
-zones_geojson = os.path.join(datapath, "zones.geojson")
-
-
-@pytest.fixture
-def data_nc():
-    return xr.open_dataset(os.path.join(datapath, "data.nc"))
+zones_shp = datapath / "zones.shp"
+zones_geojson = datapath / "zones.geojson"
 
 
 @pytest.fixture
-def data_tif():
-    da = xr.open_rasterio(os.path.join(datapath, "data.tif"))
-    return da.to_dataset(name="data")
+def netcdf_ds():
+    return xr.open_dataset(datapath / "data.nc")
 
 
 @pytest.fixture
-def proj_data_nc():
-    return xr.open_dataset(os.path.join(datapath, "proj_data.nc"))
+def netcdf_qgis_ds():
+    return xr.open_dataset(datapath / "netcdf_qgis.nc")
 
 
 @pytest.fixture
-def proj_data_tif():
-    da = xr.open_rasterio(os.path.join(datapath, "proj_data.tif"))
-    return da.to_dataset(name="data")
+def geotiff_da():
+    return xr.open_rasterio(datapath / "data.tif")
 
 
 @pytest.fixture
-def data_flipped_nc():
-    return xr.open_dataset(os.path.join(datapath, "data_flipped.nc"))
+def projected_netcdf_ds():
+    return xr.open_dataset(datapath / "proj_data.nc")
 
 
 @pytest.fixture
-def proj_data_flipped_nc():
-    return xr.open_dataset(os.path.join(datapath, "proj_data_flipped.nc"))
+def projected_netcdf_qgis_ds():
+    return xr.open_dataset(datapath / "projected_netcdf_qgis.nc")
 
 
-def test_reprojection(data_nc, data_tif, proj_data_nc, proj_data_tif, data_flipped_nc, proj_data_flipped_nc):
-    def test_ds_equal(s, t):
-        nt.assert_equal(s.geo.x_coords.values, t.geo.x_coords.values)
-        nt.assert_equal(s.geo.y_coords.values, t.geo.y_coords.values)
-        nt.assert_equal(s.data.values, t.data.values)
-
-    def test_ds_alomst_equal(s, t):
-        nt.assert_almost_equal(s.geo.x_coords.values, t.geo.x_coords.values)
-        nt.assert_almost_equal(s.geo.y_coords.values, t.geo.y_coords.values)
-        nt.assert_equal(s.data.values, t.data.values)
-
-    netcdf_dsout = data_nc.geo.reproject(target_crs="EPSG:4326")
-    gtiff_dsout = data_tif.geo.reproject(target_crs=4326)
-    flipped_dsout = data_flipped_nc.geo.reproject(target_crs=4326)
-    test_ds_equal(netcdf_dsout, gtiff_dsout)
-
-    # Because of flipped y coordinate the data could be negligibly shifted
-    test_ds_alomst_equal(netcdf_dsout, flipped_dsout)
-
-    # Coordinates can have negligible amount of differences
-    test_ds_alomst_equal(netcdf_dsout, proj_data_nc)
-    test_ds_alomst_equal(gtiff_dsout, proj_data_tif)
-    test_ds_alomst_equal(flipped_dsout, proj_data_flipped_nc)
+@pytest.fixture
+def projected_geotiff_da():
+    return xr.open_rasterio(datapath / "proj_data.tif")
 
 
-def test_projection_system(data_nc, data_tif):
-    netcdf_crs = XCRS.from_any(data_nc.geo.projection)
-    gtiff_crs = XCRS.from_any(data_tif.geo.projection)
+@pytest.fixture
+def netcdf_flipped_ds():
+    return xr.open_dataset(datapath / "data_flipped.nc")
+
+
+@pytest.fixture
+def projected_netcdf_flipped_ds():
+    return xr.open_dataset(datapath / "proj_data_flipped.nc")
+
+
+@pytest.fixture
+def zonal_stats_class_da():
+    return xr.open_dataarray(datapath / "zonal_stats_class_da.nc")
+
+
+@pytest.fixture
+def zonal_stats_class_ds():
+    return xr.open_dataset(datapath / "zonal_stats_class_ds.nc")
+
+
+@pytest.fixture
+def zonal_stats_id_da():
+    return xr.open_dataarray(datapath / "zonal_stats_id_da.nc")
+
+
+@pytest.fixture
+def zonal_stats_id_ds():
+    return xr.open_dataset(datapath / "zonal_stats_id_ds.nc")
+
+
+@pytest.fixture(params=[
+    ('netcdf_ds', "projected_netcdf_ds"),
+    ('geotiff_da', "projected_geotiff_da"),
+    ('netcdf_flipped_ds', "projected_netcdf_flipped_ds"),
+    # ("netcdf_qgis_ds", "projected_netcdf_qgis_ds")
+])
+def projection_test_data(request):
+    return map(request.getfixturevalue, request.param)
+
+
+def test_reprojection(projection_test_data):
+    original_data, projected_data = projection_test_data
+    xrobj = original_data.geo.reproject(target_crs="EPSG:4326")
+
+    # The reporjection could introduce some small offsets on the coordinates.
+    # Therefore, we check if the coordinates are almost equal to the
+    # coordinates of the reference data.
+    nt.assert_almost_equal(
+        xrobj.geo.x_coords.values,
+        projected_data.geo.x_coords.values
+    )
+    nt.assert_almost_equal(
+        xrobj.geo.y_coords.values,
+        projected_data.geo.y_coords.values
+    )
+    if isinstance(xrobj, xr.DataArray):
+        nt.assert_equal(
+            xrobj.values,
+            projected_data.values
+        )
+    else:
+        for var_key in xrobj.data_vars:
+            nt.assert_equal(
+                xrobj[var_key].values,
+                projected_data[var_key].values
+            )
+
+
+def test_projection_system(netcdf_ds, geotiff_da):
+    netcdf_crs = XCRS.from_any(netcdf_ds.geo.projection)
+    gtiff_crs = XCRS.from_any(geotiff_da.geo.projection)
     assert gtiff_crs == netcdf_crs
     assert gtiff_crs == XCRS.from_epsg(32737)
 
 
-def test_transform(data_nc, data_tif, data_flipped_nc):
-    netcdf_transform = data_nc.geo.transform
-    gtiff_transform = data_tif.geo.transform
-    nt.assert_equal(netcdf_transform, gtiff_transform)
+def test_transform(netcdf_ds, geotiff_da, netcdf_flipped_ds):
+    netcdf_transform = netcdf_ds.geo.transform
+    gtiff_transform = geotiff_da.geo.transform
 
-    nt.assert_almost_equal(data_nc.geo.bounds, data_flipped_nc.geo.bounds, decimal=5)
+    nt.assert_almost_equal(netcdf_transform, gtiff_transform)
+
+    nt.assert_almost_equal(
+        netcdf_ds.geo.bounds,
+        netcdf_flipped_ds.geo.bounds, decimal=5
+    )
 
     # Setting transform
-    data_nc.geo.transform = (1, 0, 0, 0, 1, 0)
-    nt.assert_equal(data_nc.geo.x_coords.values, np.arange(0.5, data_nc.geo.x_size + 0.5))
-    nt.assert_equal(data_nc.geo.y_coords.values, np.arange(0.5, data_nc.geo.y_size + 0.5))
+    netcdf_ds.geo.transform = (1, 0, 0, 0, 1, 0)
+
+    nt.assert_equal(
+        netcdf_ds.geo.x_coords.values,
+        np.arange(0.5, netcdf_ds.geo.x_size + 0.5)
+    )
+
+    nt.assert_equal(
+        netcdf_ds.geo.y_coords.values,
+        np.arange(0.5, netcdf_ds.geo.y_size + 0.5)
+    )
 
 
-def test_origin(data_nc):
-    neds = data_nc.copy(deep=True)
-
-    neds.geo.origin = 'bottom_right'
-    nt.assert_equal(data_nc.geo.x_coords.values, neds.geo.x_coords.values[::-1])
-    nt.assert_equal(data_nc.geo.y_coords.values, neds.geo.y_coords.values[::-1])
-    nt.assert_equal(data_nc.data.values, neds.data.loc[{'x': data_nc.geo.x_coords,
-                                                        'y': data_nc.geo.y_coords}].values)
-
-    neds.geo.origin = 'top_left'
-    nt.assert_equal(data_nc.geo.x_coords.values, neds.geo.x_coords.values)
-    nt.assert_equal(data_nc.geo.y_coords.values, neds.geo.y_coords.values)
-    nt.assert_equal(data_nc.data.values, neds.data.loc[{'x': data_nc.geo.x_coords,
-                                                        'y': data_nc.geo.y_coords}])
-
-    neds.geo.origin = 'bottom_left'
-    nt.assert_equal(data_nc.geo.x_coords.values, neds.geo.x_coords.values)
-    nt.assert_equal(data_nc.geo.y_coords.values, neds.geo.y_coords.values[::-1])
-    nt.assert_equal(data_nc.data.values, neds.data.loc[{'x': data_nc.geo.x_coords,
-                                                        'y': data_nc.geo.y_coords}])
-
-    neds.geo.origin = 'top_right'
-    nt.assert_equal(data_nc.geo.x_coords.values, neds.geo.x_coords.values[::-1])
-    nt.assert_equal(data_nc.geo.y_coords.values, neds.geo.y_coords.values)
-    nt.assert_equal(data_nc.data.values, neds.data.loc[{'x': data_nc.geo.x_coords,
-                                                          'y': data_nc.geo.y_coords}])
+@pytest.fixture(params=["netcdf_ds", "geotiff_da"])
+def origin_test_data(request):
+    return request.getfixturevalue(request.param)
 
 
-def test_zonal_statistics(data_nc, data_tif):
-    nt.assert_equal(data_nc.geo.zonal_stats(zones_shp, value_name='id').values,
-                    data_tif.geo.zonal_stats(zones_geojson, value_name='id').values)
-    nt.assert_equal(data_nc.geo.zonal_stats(zones_geojson, value_name='class').values,
-                    data_tif.geo.zonal_stats(zones_shp, value_name='class').values)
+@pytest.mark.parametrize("origin", [
+    'bottom_right', 'top_left', 'bottom_left', 'top_right'
+])
+def test_origin(origin_test_data, origin):
+    yo, xo = origin_test_data.geo.origin.split('_')
+    tyo, txo = origin.split('_')
+
+    neds = origin_test_data.copy(deep=True)
+    neds.geo.origin = origin
+    if xo == txo:
+        nt.assert_equal(
+            origin_test_data.geo.x_coords.values,
+            neds.geo.x_coords.values
+        )
+    else:
+        nt.assert_equal(
+            origin_test_data.geo.x_coords.values,
+            neds.geo.x_coords.values[::-1]
+        )
+
+    if yo == tyo:
+        nt.assert_equal(
+            origin_test_data.geo.y_coords.values,
+            neds.geo.y_coords.values
+        )
+    else:
+        nt.assert_equal(
+            origin_test_data.geo.y_coords.values,
+            neds.geo.y_coords.values[::-1]
+        )
 
 
+@pytest.fixture(params=[
+    ('netcdf_ds', 'id', 'zonal_stats_id_ds'),
+    ('netcdf_ds', 'class', 'zonal_stats_class_ds'),
+    ('geotiff_da', 'id', 'zonal_stats_id_da'),
+    ('geotiff_da', 'class', 'zonal_stats_class_da'),
+])
+def zonal_stat_test_data(request):
+    def getvalue(p):
+        try:
+            return request.getfixturevalue(p)
+        except BaseException:
+            return p
+    return map(getvalue, request.param)
 
+
+def test_zonal_statistics(zonal_stat_test_data):
+    data, value_name, reference = zonal_stat_test_data
+    xt.assert_equal(
+        data.geo.zonal_stats(zones_shp, value_name=value_name),
+        reference
+    )

@@ -1,0 +1,62 @@
+<PAMDataset>
+  <Subdataset name="Band1">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">254</MDI>
+          <MDI key="STATISTICS_MEAN">58.083293262809</MDI>
+          <MDI key="STATISTICS_MINIMUM">49</MDI>
+          <MDI key="STATISTICS_STDDEV">5.0366777083864</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="Band2">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">140</MDI>
+          <MDI key="STATISTICS_MEAN">23.415184057274</MDI>
+          <MDI key="STATISTICS_MINIMUM">13</MDI>
+          <MDI key="STATISTICS_STDDEV">4.863036229606</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="Band3">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">179</MDI>
+          <MDI key="STATISTICS_MEAN">19.807006998985</MDI>
+          <MDI key="STATISTICS_MINIMUM">6</MDI>
+          <MDI key="STATISTICS_STDDEV">7.1220164708084</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="Band4">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">151</MDI>
+          <MDI key="STATISTICS_MEAN">56.603355238553</MDI>
+          <MDI key="STATISTICS_MINIMUM">1</MDI>
+          <MDI key="STATISTICS_STDDEV">32.040602671432</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+  <Subdataset name="Band5">
+    <PAMDataset>
+      <PAMRasterBand band="1">
+        <Metadata>
+          <MDI key="STATISTICS_MAXIMUM">254</MDI>
+          <MDI key="STATISTICS_MEAN">48.540030453598</MDI>
+          <MDI key="STATISTICS_MINIMUM">1</MDI>
+          <MDI key="STATISTICS_STDDEV">32.024469775143</MDI>
+        </Metadata>
+      </PAMRasterBand>
+    </PAMDataset>
+  </Subdataset>
+</PAMDataset>

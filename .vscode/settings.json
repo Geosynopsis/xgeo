@@ -1,0 +1,10 @@
+{
+    "python.linting.enabled": true,
+    "python.pythonPath": "/opt/miniconda3/envs/xgeo/bin/python",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true
+}

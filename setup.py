@@ -18,7 +18,6 @@ setup(
         'xarray>=0.11.3',
         'pandas>=0.24.1'
         'rasterio>=1.0.18',
-        'geopandas>=0.4.0',
         'netCDF4>=1.4.2',
         'shapely>=1.6.4'
     ],
