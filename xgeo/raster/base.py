@@ -13,11 +13,18 @@ from xgeo.crs import XCRS
 from xgeo.utils import DEFAULT_DIMS, T_DIMS, X_DIMS, Y_DIMS, Z_DIMS
 from pathlib import Path
 
+
 class XGeoBaseAccessor:
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
 
     def init_geoparams(self):
+        """Initializes the parameters related to the overall geometry of the
+        xarray object. It either finds or calculates the resolution of the
+        object, the affine parameters, origin of the object and the overall
+        bounds of the object.
+        """
+
         self._obj.attrs.update(
             resolutions=self._get_resolutions(),
             transform=self._get_transform(),
@@ -26,6 +33,15 @@ class XGeoBaseAccessor:
         )
 
     def _get_resolutions(self):
+        """Calculates the resolutions along x and y dimensions of the xarray
+        object.
+
+        Returns
+        -------
+        resolutions: tuple
+            Resolutions of the object along the x and y dimensions (x
+            resolution, y resolution).
+        """
         x_res = self.x_coords.diff(self.x_dim)
         y_res = self.y_coords.diff(self.y_dim)
 
@@ -38,18 +54,46 @@ class XGeoBaseAccessor:
         return (x_res.values.min(), y_res.values.min())
 
     def is_raster(self, value):
+        """Checks whether the Dataarray provided is a raster of not. In order
+        to qualify for raster, the data array must have x and y dimensions.
+
+        Parameters
+        ----------
+        value : <xarray.DataArray>
+            The DataArray which has to be checked whether it is a raster or not.
+
+        Returns
+        -------
+        is_raster: bool
+            True if the value is a raster dataarray else False.
+        """
         return isinstance(value, xr.DataArray) and all([
             x in value.dims for x in [self.x_dim, self.y_dim]
         ])
 
     @property
     def resolutions(self):
+        """Resolution along x and y dimensions of the given xarray object.
+
+        Returns
+        -------
+        resolutions: tuplse
+            (x resolution, y resolution)
+        """
         if self._obj.attrs.get('resolutions', None) is None:
             resolutions = self._get_resolutions()
             self._obj.attrs.update(resolutions=resolutions)
         return self._obj.attrs.get('resolutions')
 
     def _get_transform(self):
+        """Calculates the transform from x and y coordinates.
+
+        Returns
+        -------
+        transform: tuple
+            Transform in affine format. 
+            (x resolution, 0, x origin, 0, y resolution, y origin)
+        """
         x_res, y_res = self.resolutions
         x_origin = self.x_coords.isel({self.x_dim: 0}) - x_res / 2.0
         y_origin = self.y_coords.isel({self.y_dim: 0}) - y_res / 2.0
@@ -59,12 +103,27 @@ class XGeoBaseAccessor:
 
     @property
     def transform(self):
+        """Geo transform of the object in affine format.
+
+        Returns
+        -------
+        transform: tuple
+            (x resolution, 0, x origin, 0, y resolution, y origin)
+        """
         if self._obj.attrs.get("transform") is None:
             transform = self._get_transform()
             self._obj.attrs.update(transform=transform)
         return self._obj.attrs.get("transform")
 
     def _recompute_coords(self, transform):
+        """Recomputes coordinate of the xarray object using the given transform.
+
+        Parameters
+        ----------
+        transform : tuple
+            Geotransform of the object in affine format.
+            (x resolution, 0, x origin, 0, y resolution, y origin)
+        """
         x_res, _, x_origin, _, y_res, y_origin = transform
         x_coords = x_origin + x_res / 2.0 + np.arange(0, self.x_size) * x_res
         y_coords = y_origin + y_res / 2.0 + np.arange(0, self.y_size) * y_res
@@ -76,6 +135,15 @@ class XGeoBaseAccessor:
 
     @transform.setter
     def transform(self, transform):
+        """Sets the geotransform of the object and recomputes the coordinates
+        according to the new transform.
+
+        Parameters
+        ----------
+        transform : tuple
+            Geotransform of the object in affine format.
+            (x resolution, 0, x origin, 0, y resolution, y origin)
+        """
         assert isinstance(transform, (tuple, list, np.ndarray)) and \
             len(transform) == 6, "`transform` variable should be either \
             tuple or list with 6 numbers"
@@ -85,6 +153,13 @@ class XGeoBaseAccessor:
 
     @property
     def projection(self):
+        """Projection of the object as Proj4 string.
+
+        Returns
+        -------
+        projection: str
+            Projection in Proj4 string.
+        """
         crs = self._obj.attrs.get("crs")
         if crs:
             self._obj.attrs.update(crs=XCRS.from_any(crs).to_proj4())
@@ -92,11 +167,26 @@ class XGeoBaseAccessor:
 
     @projection.setter
     def projection(self, value):
+        """Set the projection of the object.
+
+        Parameters
+        ----------
+        value : str or int or dict
+            Projection system in Proj4 Dictionary or String, CF Dictionary,
+            WKT String or EPSG String or Int format.
+        """
         assert isinstance(value, (str, int, dict)), "The projection should be \
         either string, integer or dictionary"
         self._obj.attrs.update(crs=XCRS.from_any(value).to_proj4())
 
     def _get_origin(self):
+        """Computes the origin of the object
+
+        Returns
+        -------
+        origin: str
+            Origin of the object eg. top_left
+        """
         x_origin = {True: 'left', False: 'right'}
         y_origin = {True: 'bottom', False: 'top'}
         x_res, y_res = self.resolutions
@@ -107,12 +197,26 @@ class XGeoBaseAccessor:
 
     @property
     def origin(self):
+        """Origin of the object
+
+        Returns
+        -------
+        origin: str
+            Origin of the object eg. top_left
+        """
         if not self._obj.attrs.get('origin', None):
             origin = self._get_origin()
             self._obj.attrs.update(origin=origin)
         return self._obj.attrs.get('origin')
 
     def _set_origin(self, origin):
+        """Sets the origin and reindexes the object according to the new origin.
+
+        Parameters
+        ----------
+        origin : str
+            Desired origin for the object.
+        """
         yo, xo = self.origin.split('_')
         nyo, nxo = origin.split('_')
         if yo != nyo:
@@ -123,6 +227,19 @@ class XGeoBaseAccessor:
 
     @origin.setter
     def origin(self, value):
+        """Sets the origin of the object
+
+        Parameters
+        ----------
+        value : str
+            Desired origin for the object.
+
+        Raises
+        ------
+        IOError
+            If the origin isn't a string or if the origin isn't one of the
+            allowed origins.
+        """
         allowed_origins = [
             'top_left', 'bottom_left', 'top_right', 'bottom_right'
         ]
@@ -134,6 +251,13 @@ class XGeoBaseAccessor:
                 belong to one of {}".format(allowed_origins))
 
     def _get_bounds(self):
+        """Get bounds of the object.
+
+        Returns
+        -------
+        bounds: tuple
+            Bounds of the object (x minimum, y minimum, x maximum, y maximum)
+        """
         x_res, _, x_origin, _, y_res, y_origin = self.transform
         x_end = x_origin + self.x_size * x_res
         y_end = y_origin + self.y_size * y_res
@@ -145,6 +269,13 @@ class XGeoBaseAccessor:
 
     @property
     def bounds(self):
+        """Bounds of the object.
+
+        Returns
+        -------
+        bounds: tuple
+            Bounds of the object (x minimum, y minimum, x maximum, y maximum)
+        """
         if self._obj.attrs.get('bounds') is None:
             bounds = self._get_bounds()
             self._obj.attrs.update(bounds=bounds)
@@ -167,22 +298,11 @@ class XGeoBaseAccessor:
         raise AttributeError(
             "y dimension isn't understood. Valid names are {}.".format(Y_DIMS)
         )
-    
+
     @property
     def non_loc_dims(self):
         dims = set(self._obj.dims).difference([self.x_dim, self.y_dim])
         return sorted(dims)
-
-    # @property
-    # def band_dim(self):
-    #     for dim in self._obj.dims:
-    #         if dim in Z_DIMS:
-    #             return dim
-    #     raise AttributeError(
-    #         "band dimension isn't understood. Valid names are {}.".format(
-    #             Z_DIMS
-    #         )
-    #     )
 
     @property
     def x_coords(self):
@@ -192,10 +312,6 @@ class XGeoBaseAccessor:
     def y_coords(self):
         return self._obj.coords.get(self.y_dim)
 
-    # @property
-    # def band_coords(self):
-    #     return self._obj.coords.get(self.band_dim)
-
     @property
     def x_size(self):
         return self._obj.sizes.get(self.x_dim)
@@ -203,10 +319,6 @@ class XGeoBaseAccessor:
     @property
     def y_size(self):
         return self._obj.sizes.get(self.y_dim)
-
-    # @property
-    # def band_size(self):
-    #     return self._obj.sizes.get(self.band_dim)
 
     @staticmethod
     def _validate_resampling(resampling=enums.Resampling.nearest):
@@ -284,7 +396,7 @@ class XGeoBaseAccessor:
             self.x_dim: slice(x_min, x_max),
             self.y_dim: slice(y_max, y_min)
         })
-        obj_subset.geo._init_geoparams()
+        obj_subset.geo.init_geoparams()
         return obj_subset
 
     def _get_geodataframe(self, vector_file, geometry_name="geometry"):
@@ -347,7 +459,7 @@ class XGeoBaseAccessor:
     def subset(self, vector_file, geometry_name="geometry", crop=False,
                extent_only=False, invert=False):
         """
-        Subset the DataArray with the vector file.
+        Subset the object with the vector file.
 
         Parameters
         ----------
@@ -375,8 +487,8 @@ class XGeoBaseAccessor:
 
         Returns
         -------
-        da: xarray.DataArray
-            Subset DataArray
+        da: xarray.DataArray or xarray.Dataset
+            Subset DataArray or Dataset
         """
 
         # Re-structure user input for special cases.
@@ -406,6 +518,23 @@ class XGeoBaseAccessor:
         return obj.where(mask != mask_value)
 
     def get_mask(self, vector_file, geometry_name="geometry", value_name=None):
+        """Creates a mask based on the given vector file
+
+        Parameters
+        ----------
+        vector_file : str or Path
+            Vector file from which a mask has to be created
+        geometry_name : str, optional
+            Name of the geometry in vector file, by default "geometry"
+        value_name : str, optional
+            Name of the value column which should be used to populate the
+            masked regions, by default None
+
+        Returns
+        -------
+        mask: xarray.DataArray
+            Mask
+        """
         vector = self._get_geodataframe(
             vector_file=vector_file,
             geometry_name=geometry_name

@@ -81,168 +81,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
                 self._obj = self._obj.assign_coords(
                     **{DEFAULT_DIMS.get(dim): [0]})
 
-    # def _compute_resolutions(self):
-    #     """
-    #     Calculates the resolutions according to the current coordinates of the Dataset and adds them into the Dataset
-    #     attribute named resolutions. The resolutions is a tuple as (x resolution, y resolution)
-    #     """
-    #     assert self.x_coords is not None and self.y_coords is not None
-    #     x_resolutions = self.x_coords.diff(self.x_dim)
-    #     y_resolutions = self.y_coords.diff(self.y_dim)
-    #     assert not (
-    #         not x_resolutions.any() or not x_resolutions.all() or not y_resolutions.any() or not y_resolutions.all()), \
-    #         "The resolutions are inconsistent. The library isn't designed to handle inconsistent resolutions"
-
-    #     self._obj.attrs.update({
-    #         "resolutions": (x_resolutions.values.min(), y_resolutions.values.min())
-    #     })
-
-    # @property
-    # def resolutions(self):
-    #     """
-    #     Gets the resolutions of the DataArrays in Dataset. If the resolutions don't exist, it calculates the
-    #     resolutions from the current coordinates.
-
-    #     Returns
-    #     -------
-    #     resolutions: (float, float)
-    #         x and y resolutions of the DataArrays.
-    #     """
-
-    #     if self._obj.attrs.get('resolutions') is not None:
-    #         self._compute_resolutions()
-    #     return self._obj.attrs.get('resolutions')
-
-    # def _compute_transform(self):
-    #     """
-    #     Calculates the affine transform parameters from the current coordinates of the Dataset and adds them to the
-    #     attribute of Dataset named transform.
-    #     """
-    #     x_res, y_res = self.resolutions
-    #     x_origin = self.x_coords.values[0] - \
-    #         x_res / 2.0  # PixelAsArea Convention
-    #     y_origin = self.y_coords.values[0] - \
-    #         y_res / 2.0  # PixelAsArea Convention
-    #     transform = (x_res, 0, x_origin, 0, y_res, y_origin)
-
-    #     self._obj.attrs.update(transform=transform)
-    #     for data_value in self._obj.data_vars.values():
-    #         if not self._is_raster_data_array(data_value):
-    #             continue
-    #         data_value.attrs.update(transform=transform)
-
-    # def _compute_coords_from_transform(self):
-    #     """
-    #     Computes x and y coordinates from the geo-transform and assigns this coordinates to the Dataset.
-    #     """
-    #     x_res, _, x_origin, _, y_res, y_origin = self.transform
-    #     self._obj.coords.update({
-    #         self.x_dim: x_origin + x_res / 2.0 + np.arange(0, self.x_size) * x_res,
-    #         self.y_dim: y_origin + y_res / 2.0 +
-    #         np.arange(0, self.y_size) * y_res
-    #     })
-
-    # def _compute_origin(self):
-    #     """
-    #     Calculates the origin of Dataset in human readable format and adds it to the attribute of Dataset named
-    #     origin.
-    #     The origins could be any of following four:
-    #         - top_left
-    #         - bottom_left
-    #         - top_right
-    #         - bottom_right
-    #     """
-    #     x_origin = {True: 'left', False: 'right'}
-    #     y_origin = {True: 'bottom', False: 'top'}
-    #     x_res, y_res = self.resolutions
-    #     self._obj.attrs.update(origin="{0}_{1}".format(
-    #         y_origin.get(y_res >= 0), x_origin.get(x_res >= 0)))
-
-    # @property
-    # def origin(self):
-    #     """
-    #     Gets the origin of the Dataset in human readable format.
-
-    #     Returns
-    #     -------
-    #     origin: str
-    #         Origin of the Dataset.
-    #     """
-
-    #     if not self._obj.attrs.get('origin'):
-    #         self._compute_origin()
-    #     return self._obj.attrs.get('origin')
-
-    # def _update_on_origin(self, origin):
-    #     """
-    #     Updates the Dataset (coordinate systems, transforms, DataArrays etc.) according to the provided origin.
-    #     Parameters
-    #     ----------
-    #     origin: str
-    #         Origin to assign to the Dataset
-    #     """
-    #     yo, xo = self.origin.split('_')
-    #     nyo, nxo = origin.split('_')
-    #     y_coords = self.y_coords
-    #     x_coords = self.x_coords
-    #     if yo != nyo:
-    #         y_coords = self.y_coords[::-1]
-    #     if xo != nxo:
-    #         x_coords = self.x_coords[::-1]
-    #     for data_var, data_value in self._obj.data_vars.items():
-    #         if not self._is_raster_data_array(data_value):
-    #             continue
-    #         if yo != nyo:
-    #             data_value[:] = data_value.loc[{self.y_dim: y_coords}].values
-    #         if xo != nxo:
-    #             data_value[:] = data_value.loc[{self.x_dim: x_coords}].values
-    #         self._obj[data_var] = data_value
-    #     self._obj.coords.update({self.x_dim: x_coords, self.y_dim: y_coords})
-    #     self.initialize_geo_attributes()
-
-    # @origin.setter
-    # def origin(self, value):
-    #     """
-    #     Sets the origin of the Dataset and updates the Dataset with respect to the new origin.
-
-    #     Parameters
-    #     ----------
-    #     value: str
-    #         Origin to be assigned to Dataset. It can be one of top_left, bottom_left, top_right, bottom_right
-
-    #     """
-    #     allowed_origins = ['top_left', 'bottom_left',
-    #                        'top_right', 'bottom_right']
-    #     if not isinstance(value, str) and value not in allowed_origins:
-    #         raise IOError("Either provided value is not string or doesn't belong to one of {}".format(
-    #             allowed_origins))
-    #     self._update_on_origin(value)
-    #     self._obj.attrs.update(origin=value)
-
-    # def _compute_bounds(self):
-    #     # TODO: Validate this
-    #     x_res, _, x_origin, _, y_res, y_origin = self.transform
-    #     x_end = x_origin + self.x_size * x_res
-    #     y_end = y_origin + self.y_size * y_res
-    #     x_options = np.array([x_origin, x_end])
-    #     y_options = np.array([y_origin, y_end])
-    #     self._obj.attrs.update(
-    #         bounds=(x_options.min(), y_options.min(), x_options.max(), y_options.max()))
-
-    # @property
-    # def bounds(self):
-    #     """
-    #     Gets the bounds of the data.
-
-    #     Returns
-    #     -------
-    #     bounds: tuple
-    #         Bounds of the data (left, bottom, right, top)
-    #     """
-    #     if not self._obj.attrs.get('bounds', None):
-    #         self._compute_bounds()
-    #     return self._obj.attrs.get('bounds')
-
     def search_projection(self):
         """
         Finds the projection system of the Dataset. The method searches
@@ -290,12 +128,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             Projection/CRS in proj4 string
         """
         return self._obj.attrs.get("crs")
-        # if self._obj.attrs.get("crs", None) is None:
-        #     self._obj.attrs.update(crs=self.search_projection())
-        #     for dataarray in self._obj.data_vars.values():
-        #         if self.is_raster(dataarray):
-        #             dataarray.geo.projection = self._obj.attrs.get("crs")
-        # return self._obj.attrs.get("crs")
 
     @projection.setter
     def projection(self, proj: str or int or dict):
@@ -315,83 +147,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         for data_values in self._obj.data_vars.values():
             if self.is_raster(value=data_values):
                 data_values.geo.projection = self._obj.attrs.get("crs")
-
-    # @property
-    # def x_dim(self):
-    #     """
-    #     Gets name of X dimension
-    #     Returns
-    #     -------
-    #     x_dim: str
-    #         Name of the X dimension
-
-    #     """
-    #     for dim in self._obj.dims.keys():
-    #         if dim in X_DIMS:
-    #             return dim
-    #     raise AttributeError(
-    #         "x dimension name isn't understood. Valid names are {}".format(X_DIMS))
-
-    # @property
-    # def x_size(self):
-    #     """
-    #     Gets the size of X dimension
-    #     Returns
-    #     -------
-    #     xsize: int
-    #         Size of X dimension
-    #     """
-    #     return self._obj.dims.get(self.x_dim)
-
-    # @property
-    # def x_coords(self):
-    #     """
-    #     Gets the X coordinates.
-    #     Returns
-    #     -------
-    #     xcoords: xarray.DataArray
-    #         X coordinates of the Dataset
-    #     """
-    #     return self._obj.coords.get(self.x_dim)
-
-    # @property
-    # def y_dim(self):
-    #     """
-    #     Gets name of Y dimension
-    #     Returns
-    #     -------
-    #     y_dim: str
-    #         Name of the y dimension
-
-    #     """
-    #     for dim in self._obj.dims.keys():
-    #         if dim in Y_DIMS:
-    #             return dim
-    #     raise AttributeError(
-    #         "y dimension name isn't understood. Valid names are {}".format(Y_DIMS))
-
-    # @property
-    # def y_size(self):
-    #     """
-    #     Gets the size of Y dimension
-    #     Returns
-    #     -------
-    #     ysize: int
-    #         Size of Y dimension
-    #     """
-    #     return self._obj.dims.get(self.y_dim)
-
-    # @property
-    # def y_coords(self):
-    #     """
-    #     Gets the Y coordinates of the Dataset.
-
-    #     Returns
-    #     -------
-    #     ycoords: xarray.DataArray
-    #         Y Coordinates of the Dataset
-    #     """
-    #     return self._obj.coords.get(self.y_dim)
 
     @property
     def band_dim(self):
@@ -479,37 +234,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             Time coordinates of the Dataset
         """
         return self._obj.coords.get(self.time_dim)
-
-    # @staticmethod
-    # def __validate_resampling(resampling: enums.Resampling or str = None):
-    #     """
-    #     Validates if the resampling is valid <rasterio.enums.Resampling> or strings. If the resampling is the string,
-    #     it fetches the corresponding <rasterio.enums.Resampling> object.
-
-    #     Parameters
-    #     ----------
-    #     resampling: rasterio.warp.Resampling or str
-    #         User provided resampling method
-
-    #     Returns
-    #     -------
-    #     resampling: rasterio.warp.Resampling
-    #         Validated resampling method
-
-    #     """
-    #     if resampling is not None:
-    #         if isinstance(resampling, enums.Resampling):
-    #             return resampling
-    #         elif isinstance(resampling, str):
-    #             try:
-    #                 return getattr(enums.Resampling, resampling)
-    #             except AttributeError:
-    #                 raise IOError("Invalid resampling method")
-    #         else:
-    #             raise IOError(
-    #                 "Resampling method can only be <rasterio.warp.Resampling> or string")
-    #     else:
-    #         return enums.Resampling.nearest
 
     def reproject(self, target_crs, resolution=None, target_height=None,
                   target_width=None, resampling=enums.Resampling.nearest,
@@ -687,64 +411,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         out_ds.attrs.update(**self._obj.attrs)
         return out_ds
 
-    def subset(self, vector_file, geometry_name="geometry", crop=False, extent_only=False, invert=False):
-        """
-        Subset the Dataset with the vector file.
-        Parameters
-        ----------
-        vector_file: str or geopandas.GeoDataFrame
-            Path to the vector file. Any vector file supported by GDAL are supported.
-
-        geometry_name: str
-            Column name that describes the geometries in the vector file. Default value is "geometry"
-
-        crop: bool
-            If True, the output Dataset bounds is approximately equal to the total bounds of the geometry. The
-            default value is False
-
-        extent_only: bool
-            If True, the output Dataset consists all the data that are within the total bounds of the geometry.
-            Default value is True. If extent_only is True, the crop is by default True.
-
-        invert: bool
-            If True, the output GeoDataset contains values that are only outside of the geometries. Default value is
-            False. This doesn't have effect if extent_only is True
-
-        Returns
-        -------
-        ds_subset: xarray.Dataset
-            Subset dataset
-
-        """
-
-        # Re-structure user input for special cases.
-        # If extent_only is true, crop is always true.
-        if extent_only:
-            crop = True
-
-        # Get GeoDataframe from given vector file
-        vf = self.__get_geodataframe(
-            vector_file=vector_file, geometry_name=geometry_name)
-
-        if crop:
-            ds_subset = self.slice_dataset(bounds=vf.total_bounds)
-
-            # If extent_only the subset dataset doesn't need to be masked
-            if extent_only:
-                return ds_subset
-        else:
-            ds_subset = self._obj.copy()
-
-        # Create a rasterized mask from the GeoDataframe and add it to the Dataset
-        ds_subset.geo.add_mask(vector_file=vf, geometry_name=geometry_name)
-        for data_var, data_value in ds_subset.data_vars.items():
-            if not self._is_raster_data_array(data_value):
-                continue
-            mask_value = 1 if invert else 0
-            ds_subset[data_var] = ds_subset[data_var].where(
-                ds_subset.mask != mask_value)
-        return ds_subset
-
     def add_mask(self, vector_file, geometry_name="geometry", value_name=None, mask_name='mask'):
         """
         Rasterizes the vector_file and add the mask as coordinate with name mask_name to the Dataset
@@ -786,39 +452,16 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
                 mask_name: ((self.y_dim, self.x_dim), mask)
             })
 
-    def slice_dataset(self, indices=None, bounds=None):
+    def to_geotiff(self, output_path='.', prefix=None, overviews=True,
+                   bigtiff=True, compress='lzw', num_threads='ALL_CPUS',
+                   tiled=True, chunked=False, dims=None,
+                   band_descriptions=None):
         """
-        Subsets Dataset either with indices or bounds.
-        Parameters
-        ----------
-        indices: tuple/list
-            Indices (row_x_min, col_y_min, row_x_max, col_y_max)
-        bounds: tuple/list
-            Bounds (x_min, y_min, x_max, y_max)
+        Creates one or multiple Geotiffs for the Dataset. If the Dataset has
+        muliple raster arrays separate geotiffs are created in paths with
+        following pattern:
+            output_path/<prifix>_<variable_name>.tif
 
-        Returns
-        -------
-        ds: xarray.Dataset
-            Dataset with data in given bounds or indices
-        """
-        assert indices is not None or bounds is not None, \
-            "Either one of parameters `indices` or `bounds` should be present"
-        if indices is not None:
-            bounds = self.__indices_to_bounds(indices)
-        x_min, y_min, x_max, y_max = bounds
-        ds_subset = self._obj.sel({
-            self.x_dim: slice(x_min, x_max),
-            self.y_dim: slice(y_max, y_min)
-        })
-        ds_subset.geo.initialize_geo_attributes()
-        return ds_subset
-
-    def to_geotiff(self, output_path='.', file_prefix='data', overviews=False, bigtiff=True, compress='lzw',
-                   tiled=True, num_threads='ALL_CPUS'):
-        """
-        Creates one or multiple Geotiffs for the Dataset. If the Dataset has muliple raster arrays or raster arrays for
-        multiple timestamps, separate geotiffs are created in following path:
-            output_path/<file_prifix>_<variable_nane>_<timestamp>.tif
         Parameters
         ----------
         output_path: str
@@ -835,47 +478,42 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             The tif is tiled if True
         num_threads: int or str
             The number of threads the process should use. Default is 'ALL_CPUS'
-
+        chunked: bool
+            If the Dataset is a dask array with chunks whether to use these
+            chunks in windowed writing.
+        dims: dict
+            If the Dataset has more than three dimensions, a geotiff cannot
+            be created unless the dimensions are mentioned. For example, if
+            you have x, y, band, time dimensions, you can either create
+            single file for one timestamp by providing {'time': time_value}
+            or single file for on band dimension {'band': band_value}.
+        band_descriptions: dict
+            Band descriptions for each variable ordered by band number.
+        Returns
+        -------
+        filepaths: dict
+            Filepaths corresponding to the variables
         """
+        if band_descriptions:
+            assert isinstance(band_descriptions, dict), "Band \
+            descriptions for Dataset should be a dictionary with variable as \
+            key and band description list ordered as per band indices as value."
 
-        output_path = pathlib.Path(output_path)
-        if not output_path.exists():
-            output_path.mkdir(parents=True)
-        for current_time in self.time_coords.values:
-            for data_var, data_value in self._obj.data_vars.items():
-                if not self._is_raster_data_array(data_value):
-                    continue
-                current_file_name = "{0}_{1}_{2}".format(
-                    file_prefix, data_var, current_time)
-                current_file_name = re.sub(r'\W', '_', current_file_name)
-                current_file_path = (
-                    output_path / current_file_name).with_suffix('.tif')
-                open_attributes = dict(
-                    driver='GTiff',
-                    height=self.y_size,
-                    width=self.x_size,
-                    dtype=str(data_value.dtype),
-                    count=self.band_size,
-                    crs=self.projection,
-                    transform=rasterio.Affine(*self.transform),
-                    bigtiff="YES" if bigtiff else "NO",
-                    copmress=compress,
-                    tiled="YES" if tiled else "NO",
-                    NUM_THREADS=num_threads
-                )
-                with rasterio.open(str(current_file_path), mode='w', **open_attributes) as ds_out:
-                    attrs_out = self._obj.attrs
-                    attrs_out.update(data_value.attrs)
-                    for attr in ['crs', 'transform']:
-                        attrs_out.pop(attr, None)
-                    ds_out.update_tags(**attrs_out)
-                    bands_out = np.arange(1, self.band_size + 1)
-                    ds_out.write(data_value.sel(
-                        **{self.time_dim: current_time}).values, bands_out)
-                    if overviews:
-                        factors = [2, 4, 8, 16]
-                        ds_out.build_overviews(
-                            factors, enums.Resampling.average)
-                        ds_out.update_tags(
-                            ns='rio_overview', resampling='average')
-                    ds_out.close()
+        file_paths = {}
+        for data_var, dataarray in self._obj.data_vars.items():
+            if not self.is_raster(dataarray):
+                continue
+            prefix = "_".join(filter(None, [prefix, data_var]))
+            file_paths[data_var] = dataarray.geo.to_geotiff(
+                output_path=output_path,
+                prefix=prefix,
+                overviews=overviews,
+                bigtiff=bigtiff,
+                compress=compress,
+                num_threads=num_threads,
+                tiled=tiled,
+                chunked=chunked,
+                dims=dims,
+                band_descriptions=(band_descriptions or {}).get(data_var)
+            )
+        return file_paths

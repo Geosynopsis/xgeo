@@ -176,6 +176,24 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
 
     def resample(self, resolution=None, target_height=None, target_width=None,
                  resampling=enums.Resampling.nearest):
+        """Upsamples or downsamples the xarray dataarray.
+
+        Parameters
+        ----------
+        resolution : tuple, optional
+            Output resolution (x resolution, y resolution), by default None
+        target_height : int, optional
+            Output height, by default None
+        target_width : int, optional
+            Output width, by default None
+        resampling : rasterio.enums.Resampling or string, optional
+            Resampling method, by default enums.Resampling.nearest
+
+        Returns
+        -------
+        resampled_ds: xarray.DataArray
+            Resampled DataArray
+        """
 
         assert resolution or all([target_height, target_width]), \
             "Either resolution or target_height and target_width parameters \
@@ -346,11 +364,13 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
 
     def to_geotiff(self, output_path='.', prefix=None, overviews=True,
                    bigtiff=True, compress='lzw', num_threads='ALL_CPUS',
-                   tiled=True, chunked=False):
+                   tiled=True, chunked=False, dims=None,
+                   band_descriptions=None):
         """
-        Creates Geotiffs from the DataArray. The geotiffs are created in
-        following path:
-            output_path/<prefix>_<variable_name>_<timestamp>.tif
+        Creates one Geotiff file for the DataArray. If the Dataset has
+        muliple raster arrays separate geotiffs are created in paths with
+        following pattern:
+            output_path/<prifix>_<variable_name>.tif
 
         Parameters
         ----------
@@ -368,9 +388,36 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             The tif is tiled if True
         num_threads: int or str
             The number of threads the process should use. Default is 'ALL_CPUS'
+        chunked: bool
+            If the Dataset is a dask array with chunks whether to use these
+            chunks in windowed writing.
+        dims: dict
+            If the Dataset has more than three dimensions, a geotiff cannot
+            be created unless the dimensions are mentioned. For example, if
+            you have x, y, band, time dimensions, you can either create
+            single file for one timestamp by providing {'time': time_value}
+            or single file for on band dimension {'band': band_value}.
+        band_descriptions: list
+            Descriptions of band ordered by band number.
 
+        Returns
+        -------
+        filepath: str
+            Path of the file created
         """
-        assert len(self._obj.dims) <= 3, "Exporting to geotiff is only \
+        band_descriptions = band_descriptions or []
+        assert isinstance(band_descriptions, list), "band description \
+            for DataArray should be a list in order of the band indices."
+
+        if dims:
+            assert isinstance(dims, dict), "dims only accepts the \
+                dictionary as input."
+
+        obj = self._obj
+        if dims is not None:
+            obj = self._obj.sel(dims)
+
+        assert len(obj.dims) <= 3, "Exporting to geotiff is only \
             supported for array that have 2 or 3 dimensions"
 
         # Check the output directory path and create if it doesn't already
@@ -380,28 +427,28 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             output_path.mkdir(parents=True)
 
         # Create the filename and filepath from given attributes.
-        filename = "_".join(filter(None, [prefix, self._obj.name or "data"]))
-        filepath = (output_path / filename).with_suffix('.tif')
+        # prefix = "_".join(filter(None, [prefix, obj.name]))
+        filepath = (output_path / prefix).with_suffix('.tif')
 
         # The dimension apart from x and y dimension is the band dimension.
         # If the band dimension isn't available that means its a raster
         # with a single band. Therefore in the following script, we figure
         # out the number of bands required in the geotiff.
         loc_dims = [self.x_dim, self.y_dim]
-        band_dims = set(self._obj.dims).difference(loc_dims)
+        band_dims = set(obj.dims).difference(loc_dims)
         if band_dims:
             band_dim = band_dims.pop()
             out_bands = np.arange(1, self._obj.sizes.get(band_dim)+1)
             band_size = len(out_bands)
         else:
-            out_bands = 1
+            out_bands = [1]
             band_size = 1
 
         create_params = dict(
             driver='GTiff',
             height=self.y_size,
             width=self.x_size,
-            dtype=str(self._obj.dtype),
+            dtype=str(obj.dtype),
             count=band_size,
             crs=self.projection,
             transform=rasterio.Affine(*self.transform),
@@ -426,7 +473,7 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             xchunk = self.x_size
             ychunk = self.y_size
             if chunked and self._obj.chunks is not None:
-                chunks = dict(zip(self._obj.dims, self._obj.chunks))
+                chunks = dict(zip(obj.dims, obj.chunks))
                 xchunk = max(set(chunks.get(self.x_dim)))
                 ychunk = max(set(chunks.get(self.y_dim)))
 
@@ -438,13 +485,16 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                     yend = ystart + ywin
 
                     ds_out.write(
-                        self._obj.isel({
+                        obj.isel({
                             self.x_dim: slice(xstart, xend),
                             self.y_dim: slice(ystart, yend)
                         }).values,
                         indexes=out_bands,
                         window=windows.Window(xstart, ystart, xwin, ywin)
                     )
+            for b, description in enumerate(band_descriptions, start=1):
+                ds_out.set_band_description(b, description)
+
             ds_out.close()
         if overviews:
             # In order to build the overviews of the raster data, I don't
@@ -455,3 +505,4 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                 ds_out.build_overviews(factors, enums.Resampling.average)
                 ds_out.update_tags(ns='rio_overview', resampling='average')
                 ds_out.close()
+        return str(filepath)

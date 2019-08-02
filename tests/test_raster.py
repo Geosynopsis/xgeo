@@ -75,6 +75,11 @@ def zonal_stats_id_ds():
     return xr.open_dataset(datapath / "zonal_stats_id_ds.nc")
 
 
+@pytest.fixture
+def subset_da():
+    return xr.open_rasterio(datapath / "subset_data.tif")
+
+
 @pytest.fixture(params=[
     ('netcdf_ds', "projected_netcdf_ds"),
     ('geotiff_da', "projected_geotiff_da"),
@@ -92,13 +97,13 @@ def test_reprojection(projection_test_data):
     # The reporjection could introduce some small offsets on the coordinates.
     # Therefore, we check if the coordinates are almost equal to the
     # coordinates of the reference data.
-    nt.assert_almost_equal(
-        xrobj.geo.x_coords.values,
-        projected_data.geo.x_coords.values
+    xt.assert_allclose(
+        xrobj.geo.x_coords,
+        projected_data.geo.x_coords
     )
-    nt.assert_almost_equal(
-        xrobj.geo.y_coords.values,
-        projected_data.geo.y_coords.values
+    xt.assert_allclose(
+        xrobj.geo.y_coords,
+        projected_data.geo.y_coords
     )
     if isinstance(xrobj, xr.DataArray):
         nt.assert_equal(
@@ -202,4 +207,55 @@ def test_zonal_statistics(zonal_stat_test_data):
     xt.assert_equal(
         data.geo.zonal_stats(zones_shp, value_name=value_name),
         reference
+    )
+
+
+def test_geotiff(netcdf_ds, geotiff_da):
+    def assert_equal(result_file, reference):
+        result = xr.open_rasterio(result_file)
+        xt.assert_allclose(
+            result.geo.x_coords,
+            reference.geo.x_coords
+        )
+        xt.assert_allclose(
+            result.geo.y_coords,
+            reference.geo.y_coords
+        )
+        nt.assert_equal(
+            result.values,
+            reference.values
+        )
+
+    filepath = netcdf_ds.data.geo.to_geotiff(
+        output_path=datapath,
+        prefix='netcdf2gtiff',
+        dims={'time': 0}
+    )
+
+    filepaths = netcdf_ds.geo.to_geotiff(
+        output_path=datapath,
+        prefix='netcdf2gtiff',
+        dims={'time': 0}
+    )
+
+    assert_equal(filepath, geotiff_da)
+    Path(filepath).unlink()
+    for _, filepath in filepaths.items():
+        assert_equal(filepath, geotiff_da)
+        Path(filepath).unlink()
+
+
+def test_subset(geotiff_da, subset_da):
+    result = geotiff_da.geo.subset(zones_geojson, crop=True)
+    nt.assert_allclose(
+        result.geo.x_coords,
+        subset_da.geo.x_coords
+    )
+    nt.assert_allclose(
+        result.geo.y_coords,
+        subset_da.geo.y_coords
+    )
+    nt.assert_equal(
+        result.values,
+        subset_da.values
     )
