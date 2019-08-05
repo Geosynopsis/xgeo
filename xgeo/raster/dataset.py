@@ -148,6 +148,12 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             if self.is_raster(value=data_values):
                 data_values.geo.projection = self._obj.attrs.get("crs")
 
+    def __warn_depricated(self, value):
+        DeprecationWarning(
+            "{} will be depricated in the future version of the \
+            library.".format(value)
+        )
+
     @property
     def band_dim(self):
         """
@@ -159,7 +165,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             Name of the band dimension
 
         """
-        DeprecationWarning(f"The band dim will be depricated soo in future.")
+        self.__warn_depricated('band_dim')
         for dim in self._obj.dims.keys():
             if dim in Z_DIMS:
                 return dim
@@ -176,6 +182,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         bands: int
             Size of band dimension
         """
+        self.__warn_depricated('band_size')
         try:
             return self._obj.dims[self.band_dim]
         except KeyError:
@@ -192,6 +199,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         bandcoords: xarray.DataArray
             Band coordinates of the Dataset
         """
+        self.__warn_depricated('band_coords')
         return self._obj.coords.get(self.band_dim)
 
     @property
@@ -205,6 +213,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             Name of the time dimension
 
         """
+        self.__warn_depricated('time_dim')
         for dim in self._obj.dims.keys():
             if dim in T_DIMS:
                 return dim
@@ -221,6 +230,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         times: int
             Size of time dimension
         """
+        self.__warn_depricated('time_size')
         return self._obj.dims.get(self.time_dim)
 
     @property
@@ -233,6 +243,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         timecoords: xarray.DataArray
             Time coordinates of the Dataset
         """
+        self.__warn_depricated('time_coords')
         return self._obj.coords.get(self.time_dim)
 
     def reproject(self, target_crs, resolution=None, target_height=None,

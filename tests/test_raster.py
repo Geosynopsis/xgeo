@@ -8,76 +8,75 @@ import xarray.testing as xt
 import xgeo
 from xgeo.crs import XCRS
 
-here = Path(__file__).parent
-datapath = here / "data"
-
-zones_shp = datapath / "zones.shp"
-zones_geojson = datapath / "zones.geojson"
+HERE = Path(__file__).parent
+DATAPATH = HERE / "data"
+ZONES_SHP = DATAPATH / "zones.shp"
+ZONES_GJSON = DATAPATH / "zones.geojson"
 
 
 @pytest.fixture
 def netcdf_ds():
-    return xr.open_dataset(datapath / "data.nc")
+    return xr.open_dataset(DATAPATH / "data.nc")
 
 
 @pytest.fixture
 def netcdf_qgis_ds():
-    return xr.open_dataset(datapath / "netcdf_qgis.nc")
+    return xr.open_dataset(DATAPATH / "netcdf_qgis.nc")
 
 
 @pytest.fixture
 def geotiff_da():
-    return xr.open_rasterio(datapath / "data.tif")
+    return xr.open_rasterio(DATAPATH / "data.tif")
 
 
 @pytest.fixture
 def projected_netcdf_ds():
-    return xr.open_dataset(datapath / "proj_data.nc")
+    return xr.open_dataset(DATAPATH / "proj_data.nc")
 
 
 @pytest.fixture
 def projected_netcdf_qgis_ds():
-    return xr.open_dataset(datapath / "projected_netcdf_qgis.nc")
+    return xr.open_dataset(DATAPATH / "projected_netcdf_qgis.nc")
 
 
 @pytest.fixture
 def projected_geotiff_da():
-    return xr.open_rasterio(datapath / "proj_data.tif")
+    return xr.open_rasterio(DATAPATH / "proj_data.tif")
 
 
 @pytest.fixture
 def netcdf_flipped_ds():
-    return xr.open_dataset(datapath / "data_flipped.nc")
+    return xr.open_dataset(DATAPATH / "data_flipped.nc")
 
 
 @pytest.fixture
 def projected_netcdf_flipped_ds():
-    return xr.open_dataset(datapath / "proj_data_flipped.nc")
+    return xr.open_dataset(DATAPATH / "proj_data_flipped.nc")
 
 
 @pytest.fixture
 def zonal_stats_class_da():
-    return xr.open_dataarray(datapath / "zonal_stats_class_da.nc")
+    return xr.open_dataarray(DATAPATH / "zonal_stats_class_da.nc")
 
 
 @pytest.fixture
 def zonal_stats_class_ds():
-    return xr.open_dataset(datapath / "zonal_stats_class_ds.nc")
+    return xr.open_dataset(DATAPATH / "zonal_stats_class_ds.nc")
 
 
 @pytest.fixture
 def zonal_stats_id_da():
-    return xr.open_dataarray(datapath / "zonal_stats_id_da.nc")
+    return xr.open_dataarray(DATAPATH / "zonal_stats_id_da.nc")
 
 
 @pytest.fixture
 def zonal_stats_id_ds():
-    return xr.open_dataset(datapath / "zonal_stats_id_ds.nc")
+    return xr.open_dataset(DATAPATH / "zonal_stats_id_ds.nc")
 
 
 @pytest.fixture
 def subset_da():
-    return xr.open_rasterio(datapath / "subset_data.tif")
+    return xr.open_rasterio(DATAPATH / "subset_data.tif")
 
 
 @pytest.fixture(params=[
@@ -205,7 +204,7 @@ def zonal_stat_test_data(request):
 def test_zonal_statistics(zonal_stat_test_data):
     data, value_name, reference = zonal_stat_test_data
     xt.assert_equal(
-        data.geo.zonal_stats(zones_shp, value_name=value_name),
+        data.geo.zonal_stats(ZONES_SHP, value_name=value_name),
         reference
     )
 
@@ -227,13 +226,13 @@ def test_geotiff(netcdf_ds, geotiff_da):
         )
 
     filepath = netcdf_ds.data.geo.to_geotiff(
-        output_path=datapath,
+        output_path=DATAPATH,
         prefix='netcdf2gtiff',
         dims={'time': 0}
     )
 
     filepaths = netcdf_ds.geo.to_geotiff(
-        output_path=datapath,
+        output_path=DATAPATH,
         prefix='netcdf2gtiff',
         dims={'time': 0}
     )
@@ -246,7 +245,7 @@ def test_geotiff(netcdf_ds, geotiff_da):
 
 
 def test_subset(geotiff_da, subset_da):
-    result = geotiff_da.geo.subset(zones_geojson, crop=True)
+    result = geotiff_da.geo.subset(ZONES_GJSON, crop=True)
     nt.assert_allclose(
         result.geo.x_coords,
         subset_da.geo.x_coords
