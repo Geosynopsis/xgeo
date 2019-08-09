@@ -94,7 +94,7 @@ def get_geodataframe(vector_file, projection, geometry_field="geometry"):
     return geodata
 
 
-def pixelwise_label_map(labeled_object):
+def pixelwise_label_map(object_sample):
     """Maps the key to each pixels. One use case can be to generate training
     data for pixelwise classification. For multivariable dataset it appends
     the datavariable in second axis. Therefore, if you don't want the value
@@ -103,7 +103,7 @@ def pixelwise_label_map(labeled_object):
 
     Parameters
     ----------
-    labeled_object : dict
+    object_sample: dict
         Dictionary with class as key and dataset/dataarray in 
         (No of pixels, No of variables/feature) format.
 
@@ -114,7 +114,7 @@ def pixelwise_label_map(labeled_object):
     """
     label = None
     data = None
-    for data_label, data_value in labeled_object.items():
+    for data_label, data_value in object_sample.items():
         if isinstance(data_value, xr.DataArray):
             first_dim = data_value.dims[0]
             pixels = data_value.sizes.get(first_dim)
