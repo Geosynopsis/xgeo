@@ -6,80 +6,17 @@ operations that are used in general day to day task in the geospatial world.
 """
 
 import os
-import pathlib
-import re
 import warnings
-from copy import deepcopy
 
-import numpy as np
-import rasterio
 import rasterio.enums as enums
-import rasterio.features as features
-import rasterio.warp as warp
 import xarray as xr
 from xgeo.crs import XCRS
-from xgeo.utils import DEFAULT_DIMS, T_DIMS, X_DIMS, Y_DIMS, Z_DIMS
 from xgeo.raster.base import XGeoBaseAccessor
+from xgeo.utils import T_DIMS, DEFAULT_DIMS, Z_DIMS
 
 
 @xr.register_dataset_accessor('geo')
 class XGeoDatasetAccessor(XGeoBaseAccessor):
-
-    def __init__(self, xarray_obj):
-        self._obj = xarray_obj
-        self.init_geoparams()
-        self.projection = self.search_projection()
-
-        # self._obj.attrs.update(
-        #     transform=self._obj.attrs.get('transform', None),
-        #     crs=self._obj.attrs.get('crs', None),
-        #     bounds=self._obj.attrs.get('bounds', None),
-        #     origin=self._obj.attrs.get('origin', None),
-        #     resolutions=self._obj.attrs.get('resolutions', None)
-        # )
-
-        # if any(map(self.is_raster, self._obj.data_vars.values())):
-        #     # Initialize attributes:
-        #     self.init_geoparams()
-
-        # # Validate and restructure the dataset
-        # self.validate_and_restructure()
-
-    def validate_and_restructure(self):
-        """
-        Validates and restructures the dataset to make full utilization of GeoDataset.
-            - Validates if x and y dimensions exists
-            - Validates if band and time dimension exists. If they don't exist, it adds those dimensions to the raster
-                DataArrays
-
-        Returns
-        -------
-        dsout: xarray.Dataset
-            A copy of original dataset restructured to have all raster DataArray in 4 dimensional format. It allows
-            the library to be consistent over its operations.
-
-        """
-        for dim in ['x_dim', 'y_dim']:
-            assert getattr(self, dim) is not None
-
-        assert any([self._is_raster_data_array(data_var) for data_var in self._obj.data_vars.values()]), \
-            "There are no raster DataArray in the Dataset."
-
-        for dim in {'band_dim', 'time_dim'}:
-            try:
-                getattr(self, dim)
-            except AttributeError:
-                warnings.warn(
-                    "There is no {0} dimension in the DataArray. It will be added to the dataarray.".format(
-                        dim)
-                )
-                for data_var, data_values in self._obj.data_vars.items():
-                    # Expand the dimension if the DataArray is a raster.
-                    if self._is_raster_data_array(data_values):
-                        self._obj[data_var] = data_values.expand_dims(
-                            DEFAULT_DIMS.get(dim))
-                self._obj = self._obj.assign_coords(
-                    **{DEFAULT_DIMS.get(dim): [0]})
 
     def search_projection(self):
         """
@@ -106,7 +43,8 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
                     crs = data_array.attrs
                     break
 
-        # If crs is found assign it to Dataset and all DataArrays to maintain consistency
+        # If crs is found assign it to Dataset and all DataArrays to maintain
+        # consistency
         if crs is None:
             warnings.warn(
                 "The projection information isn't available in the given \
@@ -116,37 +54,6 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             return None
 
         return XCRS.from_any(crs).to_proj4()
-
-    @property
-    def projection(self):
-        """
-        Gets the projection/CRS system of the Dataset
-
-        Returns
-        -------
-        projection: str
-            Projection/CRS in proj4 string
-        """
-        return self._obj.attrs.get("crs")
-
-    @projection.setter
-    def projection(self, proj: str or int or dict):
-        """
-        Sets the projection system of the Dataset to the provided projection system. This doesn't reproject the
-        Dataset to the assigned projection system. If your intention is to reproject, please use the reproject method.
-
-        Parameters
-        ----------
-        proj: str or int or dict
-            Projection system in any format supported by the rasterio eg. "EPSG:4326" or 4326
-        """
-        assert isinstance(proj, str) or isinstance(proj, int) \
-            or isinstance(proj, dict)
-        self._obj.attrs.update(crs=XCRS.from_any(proj).to_proj4())
-        # Add the crs information all raster DataArrays as well
-        for data_values in self._obj.data_vars.values():
-            if self.is_raster(value=data_values):
-                data_values.geo.projection = self._obj.attrs.get("crs")
 
     def __warn_depricated(self, value):
         DeprecationWarning(
@@ -170,7 +77,9 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             if dim in Z_DIMS:
                 return dim
         raise AttributeError(
-            "band dimension name isn't understood. Valid names are {}".format(Z_DIMS))
+            "band dimension name isn't understood. Valid names are \
+                 {}".format(Z_DIMS)
+        )
 
     @property
     def band_size(self):
@@ -218,7 +127,9 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             if dim in T_DIMS:
                 return dim
         raise AttributeError(
-            "time dimension name isn't understood, Valid names are {}".format(T_DIMS))
+            "time dimension name isn't understood, Valid names are \
+            {}".format(T_DIMS)
+        )
 
     @property
     def time_size(self):
@@ -321,59 +232,64 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         out_ds.attrs.update(**self._obj.attrs)
         return out_ds
 
-    def sample(self, vector_file, geometry_name="geometry", value_name="id"):
+    def sample(self, vector_file, geometry_field="geometry", label_field="id"):
         """
-        Samples the pixel for the given regions. Each sample pixel have all the data values for each timestamp and
-        each band.
+        Samples the pixel for the given regions. Each sample pixel have all
+        the data values.
 
         Parameters
         ----------
         vector_file: str
-            Name of the vector file to be used for the sampling. The vector file can be any one supported by geopandas.
-        geometry_name: str
-            Name of the geometry in the vector file, if it doesn't default to 'geometry'"
-        value_name: str
-            Name of the value of each region. This value will be associated with each pixels.
+            Name of the vector file to be used for the sampling. The vector
+            file can be any one supported by fiona.
+        geometry_field: str
+            Name of the geometry in the vector file, if it doesn't default to
+            'geometry'"
+        label_field: str
+            Name of the value of each region. This value will be associated
+            with each pixels.
 
         Returns
         -------
-        samples: pandas.Dataframe
-            Samples of pixels contained and touched by each regions in pandas.Dataframe.
+        samples: dict(value, xr.Dataset)
+            Dictionary with label as key and 2D dataset as value.
 
         Examples
         --------
             >>> import xgeo  # In order to use the xgeo accessor
             >>> import xarray as xr
-            >>> ds = xr.open_rasterio('test.tif')
-            >>> ds = ds.to_dataset(name='data')
-            >>> df_sample = ds.geo.sample(vector_file='test.shp', value_name="class")
-
-
+            >>> ds = xr.open_dataset('test.nc')
+            >>> df_sample = ds.geo.sample(vector_file='test.shp', label_field="class")
 
         """
-        out_ds = []
+        out_ds = {}
         for var_key, var_value in self._obj.data_vars.items():
             if not self.is_raster(var_value):
                 continue
-            out_ds.append({
-                var_key: var_value.geo.sample(
-                    vector_file=vector_file,
-                    geometry_name=geometry_name,
-                    value_name=value_name
-                )
-            })
-        out_ds = xr.merge(out_ds)
-        out_ds.attrs.update(**self._obj.attrs)
+            labeled_data = var_value.geo.sample(
+                vector_file=vector_file,
+                geometry_field=geometry_field,
+                label_field=label_field
+            )
+            for lab_key, lab_val in labeled_data.items():
+                out_ds[lab_key] = out_ds.get(lab_key, []) + [{
+                    var_key: lab_val
+                }]
+        for lab_key, lab_val in out_ds.items():
+            out_ds[lab_key] = xr.merge(out_ds.get(lab_key))
+
         return out_ds
 
     def stats(self):
         """
-        Calculates general statistics mean, standard deviation, max, min of for each band.
+        Calculates general statistics mean, standard deviation, max, min of
+        for each band.
 
         Returns
         -------
-        statistics: pandas.Dataframe
-            DataFrame with  statistics
+        statistics: xr.Dataset 
+            Dataset with non local dimensions and additional
+            `stats` dimension.
         """
         out_ds = []
         for var_key, var_value in self._obj.data_vars.items():
@@ -386,25 +302,28 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         out_ds.attrs.update(**self._obj.attrs)
         return out_ds
 
-    def zonal_stats(self, vector_file, geometry_name="geometry", value_name="id"):
+    def zonal_stats(self, vector_file, geometry_field="geometry", label_field="id"):
         """
         Calculates statistics for regions in the vector file.
 
         Parameters
         ----------
         vector_file: str or geopandas.GeoDataFrame
-            Vector file with regions/zones for which statistics needs to be calculated
+            Vector file with regions/zones for which statistics needs to be
+            calculated
 
-        geometry_name: str
+        geometry_field: str
             Name of the geometry column in vector file. Default is "geometry"
 
-        value_name: str
-            Name of the value column for each of which the statistics need to be calculated. Default is "id"
+        label_field: str
+            Name of the value column for each of which the statistics need to
+            be calculated. Default is "id"
 
         Returns
         -------
-        zonal_statistics: pandas.Dataframe
-            DataFrame with Statistics
+        zonal_statistics: xr.Dataset
+            Dataset with zonal statistics which has label_field and stats as
+            new dimensions additional to all non local dimensions.
 
         """
         out_ds = []
@@ -414,54 +333,13 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             out_ds.append({
                 var_key: var_value.geo.zonal_stats(
                     vector_file=vector_file,
-                    geometry_name=geometry_name,
-                    value_name=value_name
+                    geometry_field=geometry_field,
+                    label_field=label_field
                 )
             })
         out_ds = xr.merge(out_ds)
         out_ds.attrs.update(**self._obj.attrs)
         return out_ds
-
-    def add_mask(self, vector_file, geometry_name="geometry", value_name=None, mask_name='mask'):
-        """
-        Rasterizes the vector_file and add the mask as coordinate with name mask_name to the Dataset
-
-        Parameters
-        ----------
-        vector_file: str or geopandas.Dataframe
-            Vector file which need to be rasterized and added as mask
-
-        geometry_name: str
-            Name of geometry column in vector file if it doesn't default to "geometry"
-
-        value_name: str
-            Name of the value column, its value will be used to fill the raster. If None, all values in geometry is
-            filled with 1
-
-        mask_name: str
-            Name of the mask index
-
-        """
-        vf = self.__get_geodataframe(
-            vector_file=vector_file, geometry_name=geometry_name)
-        with rasterio.Env():
-            if value_name is not None:
-                assert value_name in vf.columns, "`value_name` should be valid name. For defaults leave it None"
-                assert vf.geometry.size == vf.get(value_name).size, \
-                    "Rows in `value_name` column and geometries are different"
-                geom_iterator = zip(vf.geometry, vf.get(value_name))
-            else:
-                geom_iterator = zip(vf.geometry, [1] * vf.geometry.size)
-
-            mask = features.rasterize(
-                geom_iterator,
-                transform=self.transform,
-                out_shape=(self.y_size, self.x_size)
-            )
-
-            self._obj.coords.update({
-                mask_name: ((self.y_dim, self.x_dim), mask)
-            })
 
     def to_geotiff(self, output_path='.', prefix=None, overviews=True,
                    bigtiff=True, compress='lzw', num_threads='ALL_CPUS',

@@ -7,6 +7,7 @@ import xarray as xr
 import xarray.testing as xt
 import xgeo
 from xgeo.crs import XCRS
+from xgeo.utils import pixelwise_label_map
 
 HERE = Path(__file__).parent
 DATAPATH = HERE / "data"
@@ -202,9 +203,9 @@ def zonal_stat_test_data(request):
 
 
 def test_zonal_statistics(zonal_stat_test_data):
-    data, value_name, reference = zonal_stat_test_data
+    data, label_field, reference = zonal_stat_test_data
     xt.assert_equal(
-        data.geo.zonal_stats(ZONES_SHP, value_name=value_name),
+        data.geo.zonal_stats(ZONES_SHP, label_field=label_field),
         reference
     )
 
@@ -258,3 +259,20 @@ def test_subset(geotiff_da, subset_da):
         result.values,
         subset_da.values
     )
+
+
+def test_sample(netcdf_ds):
+    result = netcdf_ds.geo.sample(ZONES_GJSON, label_field='class')
+    assert isinstance(result, dict)
+    assert len(result) == 3
+    assert result[1].dims == {'pixel': 34789, 'pixel_data': 10}
+    assert result[2].dims == {'pixel': 33586, 'pixel_data': 10}
+    assert result[3].dims == {'pixel': 7770, 'pixel_data': 10}
+
+
+def test_pixelwise_mapping(netcdf_ds):
+    samples = netcdf_ds.geo.sample(ZONES_GJSON, label_field='class')
+    label, data = pixelwise_label_map(samples)
+    assert isinstance(label, (list, tuple, np.ndarray))
+    assert isinstance(data, np.ndarray)
+    assert len(label) == len(data)

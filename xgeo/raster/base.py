@@ -3,20 +3,21 @@ The Base Accessor that provides a base class for DataArray and Dataset
 Accessors.
 
 """
-import warnings
 import numpy as np
 import rasterio
 import rasterio.enums as enums
 import rasterio.features as features
 import xarray as xr
 from xgeo.crs import XCRS
-from xgeo.utils import DEFAULT_DIMS, T_DIMS, X_DIMS, Y_DIMS, Z_DIMS
-from pathlib import Path
+from xgeo.utils import X_DIMS, Y_DIMS, get_geodataframe
 
 
 class XGeoBaseAccessor:
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
+        self.init_geoparams()
+        if hasattr(self, "search_projection"):
+            self.projection = self.search_projection()
 
     def init_geoparams(self):
         """Initializes the parameters related to the overall geometry of the
@@ -91,7 +92,7 @@ class XGeoBaseAccessor:
         Returns
         -------
         transform: tuple
-            Transform in affine format. 
+            Transform in affine format.
             (x resolution, 0, x origin, 0, y resolution, y origin)
         """
         x_res, y_res = self.resolutions
@@ -329,7 +330,8 @@ class XGeoBaseAccessor:
 
         Parameters
         ----------
-        resampling: rasterio.warp.Resampling or str
+        resampling: rasterio.warp.Resampling or strout_ds.attrs.update(**self._obj.attrs)
+
             User provided resampling method
 
         Returns
@@ -399,64 +401,7 @@ class XGeoBaseAccessor:
         obj_subset.geo.init_geoparams()
         return obj_subset
 
-    def _get_geodataframe(self, vector_file, geometry_name="geometry"):
-        """
-        Gets GeoDataFrame for given vector file. It carries out following
-        list of tasks.
-            - Sets the geometry from given geometry_name
-            - Reprojects the dataframe to the CRS system of the Dataset
-            - Checks whether the Dataframe is empty and whether any geometry
-            lies within the bound of the dataset.
-        Parameters
-        ----------
-        vector_file: str or geopandas.GeoDataFrame
-            Vector file to be read
-
-        geometry_name: str
-            Name of the geometry in the vector file if it doesn't default to
-            "geometry"
-
-        Returns
-        -------
-        vector_gdf: geopandas.GeoDataFrame
-            GeoDataFrame for the given vector file
-        """
-        try:
-            import geopandas
-            import shapely.geometry
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "`fiona` module is needed to use this function. Please \
-                install it and try again"
-            )
-
-        # Read and reproject the vector file
-        assert isinstance(vector_file, (str, Path, geopandas.GeoDataFrame)), \
-            "Invalid vector_file. The `vector_file` should either be path to \
-            file or geopandas.GeoDataFrame"
-
-        if isinstance(vector_file, (str, Path)):
-            vector = geopandas.read_file(vector_file)
-        else:
-            vector = vector_file
-
-        # Set geometry of the geodataframe
-        vector = vector.set_geometry(geometry_name)
-
-        # If the projection system exists. Reproject the vector to the
-        # projection system of the data.
-        if self.projection:
-            vector = vector.to_crs(XCRS.from_any(self.projection).to_dict())
-
-        # Validate that the vector file isn't empty and at least one of the
-        # geometries in the vector file is intersecting the raster bounds.
-        assert not vector.empty, "Vector file doesn't contain any geometry"
-        raster_bound = shapely.geometry.box(*self.bounds)
-        assert any([raster_bound.intersects(feature) for feature in vector.geometry]
-                   ), "No geometry in vector file are intersects the image bound"
-        return vector
-
-    def subset(self, vector_file, geometry_name="geometry", crop=False,
+    def subset(self, vector_file, geometry_field="geometry", crop=False,
                extent_only=False, invert=False):
         """
         Subset the object with the vector file.
@@ -467,7 +412,7 @@ class XGeoBaseAccessor:
             Path to the vector file. Any vector file supported by GDAL are
             supported.
 
-        geometry_name: str
+        geometry_field: str
             Column name that describes the geometries in the vector file.
             Default value is "geometry"
 
@@ -497,13 +442,14 @@ class XGeoBaseAccessor:
             crop = True
 
         # Get GeoDataframe from given vector file
-        vf = self._get_geodataframe(
+        vector = get_geodataframe(
             vector_file=vector_file,
-            geometry_name=geometry_name
+            projection=self.projection,
+            geometry_field=geometry_field
         )
 
         if crop:
-            obj = self.xrslice(bounds=vf.total_bounds)
+            obj = self.xrslice(bounds=vector.bounds)
 
             # If extent_only the subset dataset doesn't need to be masked
             if extent_only:
@@ -512,21 +458,21 @@ class XGeoBaseAccessor:
             obj = self._obj.copy()
 
         # Create a rasterized mask from the GeoDataframe and add as coordinate.
-        mask = obj.geo.get_mask(vector_file=vf, geometry_name=geometry_name)
+        mask = obj.geo.get_mask(vector=vector, geometry_field=geometry_field)
         mask_value = 1 if invert else 0
 
         return obj.where(mask != mask_value)
 
-    def get_mask(self, vector_file, geometry_name="geometry", value_name=None):
+    def get_mask(self, vector, geometry_field="geometry", label_field=None):
         """Creates a mask based on the given vector file
 
         Parameters
         ----------
         vector_file : str or Path
             Vector file from which a mask has to be created
-        geometry_name : str, optional
+        geometry_field : str, optional
             Name of the geometry in vector file, by default "geometry"
-        value_name : str, optional
+        label_field : str, optional
             Name of the value column which should be used to populate the
             masked regions, by default None
 
@@ -535,20 +481,17 @@ class XGeoBaseAccessor:
         mask: xarray.DataArray
             Mask
         """
-        vector = self._get_geodataframe(
-            vector_file=vector_file,
-            geometry_name=geometry_name
-        )
         with rasterio.Env():
-            if value_name is not None:
-                assert value_name in vector.columns, "`value_name` should be \
-                valid name. For defaults leave it None"
-                assert vector.geometry.size == vector.get(value_name).size, \
-                    "Rows in `value_name` column and geometries are different"
-                geom_iterator = zip(vector.geometry, vector.get(value_name))
+            if label_field is not None:
+                assert label_field in vector.columns, "`label_field` should be \
+                   valid name. For defaults leave it None"
+                geom_iterator = zip(
+                    vector[geometry_field], vector[label_field])
             else:
                 geom_iterator = zip(
-                    vector.geometry, [1] * vector.geometry.size)
+                    vector[geometry_field],
+                    [1]*len(vector[geometry_field])
+                )
 
             mask = features.rasterize(
                 geom_iterator,
@@ -557,3 +500,9 @@ class XGeoBaseAccessor:
             )
 
             return xr.DataArray(mask, dims=(self.y_dim, self.x_dim))
+
+    def as_2d(self):
+        return self._obj.stack(
+            pixel=(self.x_dim, self.y_dim),
+            pixel_data=self.non_loc_dims
+        )

@@ -13,6 +13,7 @@ import pathlib
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 import rasterio
 import rasterio.enums as enums
 import rasterio.warp as warp
@@ -20,6 +21,7 @@ import rasterio.windows as windows
 import xarray as xr
 from xgeo.crs import XCRS
 from xgeo.raster.base import XGeoBaseAccessor
+from xgeo.utils import get_geodataframe
 
 
 @xr.register_dataarray_accessor('geo')
@@ -207,28 +209,26 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             resampling=resampling
         )
 
-    def sample(self, vector_file, geometry_name="geometry", value_name="id"):
+    def sample(self, vector_file, geometry_field="geometry", label_field="id"):
         """
         Samples the pixel for the given regions. Each sample pixel have all
-        the data values for each timestamp and each band.
+        the data values.
 
         Parameters
         ----------
         vector_file: str
             Name of the vector file to be used for the sampling. The vector
             file can be any one supported by geopandas.
-        geometry_name: str
-            Name of the geometry in the vector file, if it doesn't default to
-            'geometry'"
-        value_name: str
-            Name of the value of each region. This value will be associated
-            with each pixels.
+        geometry_field: str, optional
+            Name of the geometry field in the vector file, by default 'geometry'
+        label_field: str, optional
+            Name of the label field of each region, by default 'id'
 
         Returns
         -------
-        samples: pandas.Dataframe
-            Samples of pixels contained and touched by each regions in
-            pandas.Dataframe.
+        samples: dict(value, xr.DataArray)
+            Dictionary with label as key and 2D Dataarray (No of pixels,
+            Pixel data) as value.
 
         Examples
         --------
@@ -237,61 +237,43 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             >>> ds = xr.open_rasterio('test.tif')
             >>> ds = ds.to_dataset(name='data')
             >>> df_sample = ds.geo.sample(vector_file='test.shp',
-                value_name="class")
+                label_field="class")
 
         """
-        try:
-            import pandas as pd
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "`pandas` module should be installed to use this functionality"
-            )
-
         # Get geopandas.GeoDataFrame object for given vector file
-        vector = self._get_geodataframe(
+        vector = get_geodataframe(
             vector_file=vector_file,
-            geometry_name=geometry_name
+            projection=self.projection,
+            geometry_field=geometry_field
         )
 
         # Add mask to the Dataset matching the regions in the vector file
         mask = self.get_mask(
-            vector_file=vector_file,
-            geometry_name=geometry_name,
-            value_name=value_name
+            vector=vector,
+            geometry_field=geometry_field,
+            label_field=label_field
         )
 
-        data_array = deepcopy(self._obj)
-        data_array.coords.update(**{value_name: mask})
+        labeled_data = {}
+        for val in vector[label_field].unique():
+            labeled_data[val] = self._obj.where(mask == val).stack(
+                pixel=(self.x_dim, self.y_dim),
+                pixel_data=(self.non_loc_dims)
+            ).dropna(dim="pixel", how='all')
+        return labeled_data
 
-        # Collect all pixel and it values for each region.
-        dataframe_aggregate = []
-        for bound in vector.bounds.values:
-            # Subset the data as per the values and change it to pandas.
-            dataarray_subset = data_array.sel({
-                self.x_dim: slice(bound[0], bound[2]),
-                self.y_dim: slice(bound[3], bound[1])
-            })
-
-            dataframe = dataarray_subset.to_dataframe()
-
-            # Select valid and non nan rows
-            dataframe = dataframe.where(
-                dataframe[value_name].isin(vector[value_name])
-            ).dropna()
-            dataframe_aggregate.append(dataframe)
-        return pd.concat(dataframe_aggregate)
-
-    def stats(self, name=None):
+    def stats(self):
         """
         Calculates general statistics mean, standard deviation, max, min of
         for each band.
 
         Returns
         -------
-        statistics: pandas.Dataframe
-            DataFrame with  statistics
+        statistics: xr.DataArray
+            Dataarray with statics with `stat` as new dimension along with
+            all non local dimensions.
         """
-        name = name or self._obj.name or "data"
+        name = self._obj.name or "data"
 
         da = xr.DataArray(
             xr.concat([
@@ -305,7 +287,7 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
         da.coords.update({"stat": ["mean", "std", "min", "max"]})
         return da
 
-    def zonal_stats(self, vector_file, geometry_name="geometry", value_name="id"):
+    def zonal_stats(self, vector_file, geometry_field="geometry", label_field="id"):
         """
         Calculates statistics for regions in the vector file.
 
@@ -315,36 +297,38 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             Vector file with regions/zones for which statistics needs to be
             calculated
 
-        geometry_name: str
-            Name of the geometry column in vector file. Default is "geometry"
+        geometry_field: str, optional
+            Name of the geometry column in vector file, by default "geometry"
 
-        value_name: str
-            Name of the value column for each of which the statistics need to
-            be calculated. Default is "id"
+        label_field: str, optional
+            Name of the label column for each of which the statistics need to
+            be calculated, by default "id"
 
         Returns
         -------
-        zonal_statistics: pandas.Dataframe
-            DataFrame with Statistics
+        zonal_statistics: xr.DataArray
+            Dataarray with zonal statistics with zone_id/value and stats as new
+            dimension along with the non local dimensions.
 
         """
         # Get geopandas.GeoDataframe object for given vector file.
-        vector = self._get_geodataframe(
+        vector = get_geodataframe(
             vector_file=vector_file,
-            geometry_name=geometry_name
+            projection=self.projection,
+            geometry_field=geometry_field
         )
 
         # Add mask with rasterized regions in the given vector file.
         mask = self.get_mask(
-            vector_file=vector_file,
-            geometry_name=geometry_name,
-            value_name=value_name
+            vector=vector,
+            geometry_field=geometry_field,
+            label_field=label_field
         )
 
         # Collect statistics for the regions
         stat_collection = []
         value_coords = []
-        for val in np.unique(vector.get(value_name)):
+        for val in np.unique(vector.get(label_field)):
             value_coords.append(val)
             temp_val = self._obj.where(mask == val)
             stat_collection.append(xr.concat([
@@ -354,10 +338,10 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                 temp_val.max(dim=[self.x_dim, self.y_dim], skipna=True)
             ], dim="stat"))
 
-        data_array = xr.concat(stat_collection, dim=value_name)
+        data_array = xr.concat(stat_collection, dim=label_field)
         data_array.coords.update({
             "stat": ["mean", "std", "min", "max"],
-            value_name: value_coords
+            label_field: value_coords
         })
 
         return data_array
@@ -492,6 +476,7 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                         indexes=out_bands,
                         window=windows.Window(xstart, ystart, xwin, ywin)
                     )
+
             for b, description in enumerate(band_descriptions, start=1):
                 ds_out.set_band_description(b, description)
 
