@@ -232,6 +232,63 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         out_ds.attrs.update(**self._obj.attrs)
         return out_ds
 
+    def resample(self, resolutions=None, target_height=None, target_width=None,
+                 resampling='nearest', source_nodata=0, target_nodata=0,
+                 memory_limit=0, threads=os.cpu_count()):
+        """Upsamples or downsamples the xarray dataarray.
+
+        Parameters
+        ----------
+
+        resolutions : tuple, optional
+            Output resolution (x resolution, y resolution), by default None
+
+        target_height : int, optional
+            Output height, by default None
+
+        target_width : int, optional
+            Output width, by default None
+
+        resampling : rasterio.enums.Resampling or string, optional
+            Resampling method, by default enums.Resampling.nearest
+
+        source_nodata: int or float (Optional)
+            Source NoData value
+
+        target_nodata: int or float (Optional)
+            Target NoData value
+
+        memory_limit: int (Optional)
+            Maximum memory the process should use. Defaults to 64MB
+
+        threads: int (Optional)
+            Number of threads the process should use. Defaults to number of CPU.
+
+        Returns
+        -------
+        resampled_ds: xarray.DataArray
+            Resampled DataArray
+        """
+        out_ds = []
+        for var_key, var_value in self._obj.data_vars.items():
+            if not self.is_raster(var_value):
+                continue
+            out_ds.append({
+                var_key: var_value.geo.resample(
+                    resolutions=resolutions,
+                    target_height=target_height,
+                    target_width=target_width,
+                    resampling=resampling,
+                    source_nodata=source_nodata,
+                    target_nodata=target_nodata,
+                    memory_limit=memory_limit,
+                    threads=threads
+                )
+            })
+        out_ds = xr.merge(out_ds)
+        out_ds.attrs.update(**self._obj.attrs)
+        return out_ds
+
     def sample(self, vector_file, geometry_field="geometry", label_field="id"):
         """
         Samples the pixel for the given regions. Each sample pixel have all

@@ -80,15 +80,19 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
 
 
         """
-
         with rasterio.Env():
             # Create the transform parameters like affine transforms of source
             # and destination, width and height of the destination raster
 
             left, bottom, right, top = self.bounds
-            src_transform = rasterio.Affine(*self.transform)
 
-            dst_transform, width, height = warp.calculate_default_transform(
+            # Rasterio assumes the resolution is given in positive format,
+            rio_resolutions = resolutions
+            if resolutions is not None and isinstance(resolutions,
+                                                      (tuple, list)):
+                rio_resolutions = tuple(np.abs(rio_resolutions))
+
+            target_transform, width, height = warp.calculate_default_transform(
                 src_crs=XCRS.from_any(self.projection),
                 dst_crs=XCRS.from_any(target_crs),
                 width=self.x_size,
@@ -97,88 +101,70 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                 right=right,
                 bottom=bottom,
                 top=top,
-                resolution=resolutions,
+                resolution=rio_resolutions,
                 dst_height=target_height,
                 dst_width=target_width
             )
 
-            # If the resolution is given, the origin of the transform is
-            # shifted by the factor of old and new resolution. For some reason
-            # warp automatically doensn't handle this. Therefore,we shift the
-            # origin by factor in the section below.
-
-            # Affine operation overview for not to get confused.
-
-            #   Affine.translation(tx, ty) T = | 1 0 tx |
-            #                                  | 0 1 ty |
-            #                                  | 0 0 1  |
-
-            # Affine.scale(sx, sy) S = | sx  0  0 |
-            #                          | 0   sy 1 |
-            #                          | 0    0 1 |
-
-            # T * S = |sx  0  tx|
-            #         |0   sy ty|
-            #         |0   0   1|
-
-            if resolutions and resolutions != self.resolutions:
-                x_res, y_res = self.resolutions
-                xt_res, yt_res = resolutions
-                dst_transform = transform.Affine.translation(
-                    dst_transform.xoff + (x_res - xt_res) / 2.0,
-                    dst_transform.yoff + (y_res - yt_res) / 2.0
-                ) * transform.Affine.scale(
-                    xt_res,
-                    yt_res
-                )
-
-            dst_projection = XCRS.from_any(target_crs).to_string()
-
-            # Re-project the raster DataArray from source to the destination
-            # dataset
-            resampling = self._validate_resampling(resampling)
-
-            # In following section, we initialize the output data array. As
-            # only the shape along the x and y dimension changes, the rest of
-            # the dimensions of the output data array should be same as the
-            # original.
-            dst_shape = collections.OrderedDict(self._obj.sizes)
-            dst_shape[self.x_dim] = width
-            dst_shape[self.y_dim] = height
-
-            dst_coords = collections.OrderedDict(self._obj.coords)
-            # Since the reprojection changes the coordinates on x and y
-            # dimension, here we delete the coordinates and we will recompute
-            # the coordinates from the transformation after the initialization
-            # of the data array.
-            del dst_coords[self.x_dim]
-            del dst_coords[self.y_dim]
-
-            # Prepare essential attributes for the new raster DataArray. The
-            # geotransform and the crs system of the projected system changes
-            # therefore, those values should be overwritten with the new
-            # values.
-            dst_attrs = deepcopy(self._obj.attrs)
-            # dst_attrs.update(
-            #     transform=tuple(dst_transform[:6]),
-            #     crs=dst_projection
-            # )
-
-            dst_dataarray = xr.DataArray(
-                np.ma.asanyarray(
-                    np.empty(
-                        shape=list(dst_shape.values()),
-                        dtype=self._obj.dtype
-                    )
-                ),
-                dims=self._obj.dims,
-                attrs=dst_attrs,
-                coords=dst_coords
+            return self._warp(
+                target_transform=target_transform,
+                target_crs=target_crs,
+                target_width=width,
+                target_height=height,
+                target_nodata=target_nodata,
+                source_nodata=source_nodata,
+                memory_limit=memory_limit,
+                threads=threads,
+                resampling=resampling
             )
-            # Recompute the coordinates from the new geotransform
-            dst_dataarray.geo.transform = tuple(dst_transform[:6])
-            dst_dataarray.geo.projection = dst_projection
-            dst_dataarray.geo.init_geoparams()
+
+    def _warp(self, target_crs, target_transform, target_width,
+              target_height, source_nodata=0, target_nodata=0, memory_limit=0,
+              threads=os.cpu_count(), resampling=enums.Resampling.nearest):
+
+        source_transform = rasterio.Affine(*self.transform)
+        target_projection = XCRS.from_any(target_crs).to_string()
+
+        # Re-project the raster DataArray from source to the destination
+        # dataset
+        resampling = self._validate_resampling(resampling)
+
+        # In following section, we initialize the output data array. As
+        # only the shape along the x and y dimension changes, the rest of
+        # the dimensions of the output data array should be same as the
+        # original.
+        dst_shape = collections.OrderedDict(self._obj.sizes)
+        dst_shape[self.x_dim] = target_width
+        dst_shape[self.y_dim] = target_height
+
+        dst_coords = collections.OrderedDict(self._obj.coords)
+        # Since the reprojection changes the coordinates on x and y
+        # dimension, here we delete the coordinates and we will recompute
+        # the coordinates from the transformation after the initialization
+        # of the data array.
+        del dst_coords[self.x_dim]
+        del dst_coords[self.y_dim]
+
+        # Prepare essential attributes for the new raster DataArray. The
+        # geotransform and the crs system of the projected system changes
+        # therefore, those values should be overwritten with the new
+        # values.
+        dst_attrs = deepcopy(self._obj.attrs)
+        dst_dataarray = xr.DataArray(
+            np.ma.asanyarray(
+                np.empty(
+                    shape=list(dst_shape.values()),
+                    dtype=self._obj.dtype
+                )
+            ),
+            dims=self._obj.dims,
+            attrs=dst_attrs,
+            coords=dst_coords
+        )
+        # Recompute the coordinates from the new geotransform
+        dst_dataarray.geo.transform = tuple(target_transform[:6])
+        dst_dataarray.geo.projection = target_projection
+        dst_dataarray.geo.init_geoparams()
 
         # The rasterio reprojection only supports either two or three
         # dimensional images. Therefore, we iterate the reprojection by
@@ -190,8 +176,8 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             dst_nodata=target_nodata,  # doesn't support negative and nan
             dst_crs=XCRS.from_any(target_crs),
             src_crs=XCRS.from_any(self.projection),
-            dst_transform=dst_transform,
-            src_transform=src_transform,
+            dst_transform=target_transform,
+            src_transform=source_transform,
             num_threads=threads or os.cpu_count(),
             resampling=resampling,
             warp_mem_limit=memory_limit
@@ -218,37 +204,109 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
         return dst_dataarray
 
     def resample(self, resolutions=None, target_height=None, target_width=None,
-                 resampling=enums.Resampling.nearest):
+                 resampling='nearest', source_nodata=0, target_nodata=0,
+                 memory_limit=0, threads=os.cpu_count()):
         """Upsamples or downsamples the xarray dataarray.
 
         Parameters
         ----------
-        resolution : tuple, optional
+
+        resolutions : tuple, optional
             Output resolution (x resolution, y resolution), by default None
+
         target_height : int, optional
             Output height, by default None
+
         target_width : int, optional
             Output width, by default None
+
         resampling : rasterio.enums.Resampling or string, optional
             Resampling method, by default enums.Resampling.nearest
+
+        source_nodata: int or float (Optional)
+            Source NoData value
+
+        target_nodata: int or float (Optional)
+            Target NoData value
+
+        memory_limit: int (Optional)
+            Maximum memory the process should use. Defaults to 64MB
+
+        threads: int (Optional)
+            Number of threads the process should use. Defaults to number of CPU.
 
         Returns
         -------
         resampled_ds: xarray.DataArray
             Resampled DataArray
         """
-
         assert resolutions or all([target_height, target_width]), \
             "Either resolution or target_height and target_width parameters \
             should be provided."
 
-        return self.reproject(
-            target_crs=self.projection,
-            resolutions=resolutions,
-            target_height=target_height,
-            target_width=target_width,
-            resampling=resampling
-        )
+        with rasterio.Env():
+            left, bottom, right, top = self.bounds
+
+            # Rasterio assumes the resolution is given in positive format,
+            rio_resolutions = resolutions
+            if resolutions is not None and isinstance(resolutions, (tuple, list)):
+                rio_resolutions = tuple(np.abs(rio_resolutions))
+
+            target_transform, width, height = warp.calculate_default_transform(
+                src_crs=XCRS.from_any(self.projection),
+                dst_crs=XCRS.from_any(self.projection),
+                width=self.x_size,
+                height=self.y_size,
+                left=left,
+                right=right,
+                bottom=bottom,
+                top=top,
+                resolution=rio_resolutions,
+                dst_height=target_height,
+                dst_width=target_width
+            )
+
+            # The origin of the transform resulted by the conversion is
+            # shifted by the factor of old and new resolution. For some reason
+            # warp automatically doensn't handle this. Therefore,we shift the
+            # origin by factor in the section below.
+
+            # Affine operation overview for not to get confused.
+
+            #   Affine.translation(tx, ty) T = | 1 0 tx |
+            #                                  | 0 1 ty |
+            #                                  | 0 0 1  |
+
+            # Affine.scale(sx, sy) S = | sx  0  0 |
+            #                          | 0   sy 1 |
+            #                          | 0    0 1 |
+
+            # T * S = |sx  0  tx|
+            #         |0   sy ty|
+            #         |0   0   1|
+
+            if (target_transform.a, target_transform.e) != self.resolutions:
+                x_res, y_res = self.resolutions
+                xt_res, yt_res = (target_transform.a, target_transform.e)
+                target_transform = transform.Affine.translation(
+                    target_transform.xoff + (x_res - xt_res) / 2.0,
+                    target_transform.yoff + (y_res - yt_res) / 2.0
+                ) * transform.Affine.scale(
+                    xt_res,
+                    yt_res
+                )
+
+            return self._warp(
+                target_transform=target_transform,
+                target_crs=self.projection,
+                target_width=width,
+                target_height=height,
+                target_nodata=target_nodata,
+                source_nodata=source_nodata,
+                memory_limit=memory_limit,
+                threads=threads,
+                resampling=resampling
+            )
 
     def sample(self, vector_file, geometry_field="geometry", label_field="id"):
         """
