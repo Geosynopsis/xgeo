@@ -11,11 +11,13 @@ import collections
 import os
 import pathlib
 from copy import deepcopy
+from functools import partial
 
 import numpy as np
 import pandas as pd
 import rasterio
 import rasterio.enums as enums
+import rasterio.transform as transform
 import rasterio.warp as warp
 import rasterio.windows as windows
 import xarray as xr
@@ -27,7 +29,7 @@ from xgeo.utils import get_geodataframe
 @xr.register_dataarray_accessor('geo')
 class XGeoDataArrayAccessor(XGeoBaseAccessor):
 
-    def reproject(self, target_crs, resolution=None, target_height=None,
+    def reproject(self, target_crs, resolutions=None, target_height=None,
                   target_width=None, resampling=enums.Resampling.nearest,
                   source_nodata=0, target_nodata=0, memory_limit=0,
                   threads=os.cpu_count()):
@@ -39,8 +41,8 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
         target_crs: int or string or dict
             Target projection/CRS system the DataSet should be reprojected to
 
-        resolution: int or float (Optional)
-            Target resolution
+        resolutions: tuple (int or float, int or float) (Optional)
+            Target resolution (xres, yres)
 
         resampling: rasterio.warp.Resampling or string
             Resampling method to be used. Default is 'nearest'
@@ -95,10 +97,40 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
                 right=right,
                 bottom=bottom,
                 top=top,
-                resolution=resolution,
+                resolution=resolutions,
                 dst_height=target_height,
                 dst_width=target_width
             )
+
+            # If the resolution is given, the origin of the transform is
+            # shifted by the factor of old and new resolution. For some reason
+            # warp automatically doensn't handle this. Therefore,we shift the
+            # origin by factor in the section below.
+
+            # Affine operation overview for not to get confused.
+
+            #   Affine.translation(tx, ty) T = | 1 0 tx |
+            #                                  | 0 1 ty |
+            #                                  | 0 0 1  |
+
+            # Affine.scale(sx, sy) S = | sx  0  0 |
+            #                          | 0   sy 1 |
+            #                          | 0    0 1 |
+
+            # T * S = |sx  0  tx|
+            #         |0   sy ty|
+            #         |0   0   1|
+
+            if resolutions and resolutions != self.resolutions:
+                x_res, y_res = self.resolutions
+                xt_res, yt_res = resolutions
+                dst_transform = transform.Affine.translation(
+                    dst_transform.xoff + (x_res - xt_res) / 2.0,
+                    dst_transform.yoff + (y_res - yt_res) / 2.0
+                ) * transform.Affine.scale(
+                    xt_res,
+                    yt_res
+                )
 
             dst_projection = XCRS.from_any(target_crs).to_string()
 
@@ -146,37 +178,46 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             # Recompute the coordinates from the new geotransform
             dst_dataarray.geo.transform = tuple(dst_transform[:6])
             dst_dataarray.geo.projection = dst_projection
+            dst_dataarray.geo.init_geoparams()
 
         # The rasterio reprojection only supports either two or three
         # dimensional images. Therefore, we iterate the reprojection by
         # selecting only 2D image using coordinates of non locational
         # dimensions.
-        non_loc_coords = map(
-            np.ravel,
-            np.meshgrid(
-                *(self._obj.coords.get(dim).values for dim in self.non_loc_dims)
-            )
+        reproject_partial = partial(
+            warp.reproject,
+            src_nodata=source_nodata,
+            dst_nodata=target_nodata,  # doesn't support negative and nan
+            dst_crs=XCRS.from_any(target_crs),
+            src_crs=XCRS.from_any(self.projection),
+            dst_transform=dst_transform,
+            src_transform=src_transform,
+            num_threads=threads or os.cpu_count(),
+            resampling=resampling,
+            warp_mem_limit=memory_limit
         )
-        for temp_coords in zip(*non_loc_coords):
-            loc_dict = dict(zip(self.non_loc_dims, temp_coords))
-            warp.reproject(
-                self._obj.loc[loc_dict].values,
-                dst_dataarray.loc[loc_dict].values,
-                src_nodata=source_nodata,
-                dst_nodata=target_nodata,  # doesn't support negative and nan
-                dst_crs=XCRS.from_any(target_crs),
-                src_crs=XCRS.from_any(self.projection),
-                dst_transform=dst_transform,
-                src_transform=src_transform,
-                num_threads=threads or os.cpu_count(),
-                resampling=resampling,
-                warp_mem_limit=memory_limit
+        if self.non_loc_dims is not None:
+            non_loc_coords = map(
+                np.ravel,
+                np.meshgrid(
+                    *(self._obj.coords.get(dim).values for dim in self.non_loc_dims)
+                )
             )
 
-        dst_dataarray.geo.init_geoparams()
+            for temp_coords in zip(*non_loc_coords):
+                loc_dict = dict(zip(self.non_loc_dims, temp_coords))
+                reproject_partial(
+                    self._obj.loc[loc_dict].values,
+                    dst_dataarray.loc[loc_dict].values,
+                )
+        else:
+            reproject_partial(
+                self._obj.values,
+                dst_dataarray.values,
+            )
         return dst_dataarray
 
-    def resample(self, resolution=None, target_height=None, target_width=None,
+    def resample(self, resolutions=None, target_height=None, target_width=None,
                  resampling=enums.Resampling.nearest):
         """Upsamples or downsamples the xarray dataarray.
 
@@ -197,13 +238,13 @@ class XGeoDataArrayAccessor(XGeoBaseAccessor):
             Resampled DataArray
         """
 
-        assert resolution or all([target_height, target_width]), \
+        assert resolutions or all([target_height, target_width]), \
             "Either resolution or target_height and target_width parameters \
             should be provided."
 
         return self.reproject(
             target_crs=self.projection,
-            resolution=resolution,
+            resolutions=resolutions,
             target_height=target_height,
             target_width=target_width,
             resampling=resampling

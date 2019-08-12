@@ -17,7 +17,7 @@ class XGeoBaseAccessor:
         self._obj = xarray_obj
         self.init_geoparams()
         if hasattr(self, "search_projection"):
-            self.projection = self.search_projection()
+            self.projection = getattr(self, "search_projection")()
 
     def init_geoparams(self):
         """Initializes the parameters related to the overall geometry of the
@@ -25,13 +25,16 @@ class XGeoBaseAccessor:
         object, the affine parameters, origin of the object and the overall
         bounds of the object.
         """
-
         self._obj.attrs.update(
-            resolutions=self._get_resolutions(),
-            transform=self._get_transform(),
-            origin=self._get_origin(),
-            bounds=self._get_bounds()
+            resolutions=None,
+            transform=None,
+            origin=None,
+            bounds=None
         )
+        self._obj.attrs.update(resolutions=self._get_resolutions())
+        self._obj.attrs.update(transform=self._get_transform())
+        self._obj.attrs.update(origin=self._get_origin())
+        self._obj.attrs.update(bounds=self._get_bounds())
 
     def _get_resolutions(self):
         """Calculates the resolutions along x and y dimensions of the xarray
@@ -149,8 +152,9 @@ class XGeoBaseAccessor:
             len(transform) == 6, "`transform` variable should be either \
             tuple or list with 6 numbers"
 
-        self._obj.attrs.update(transform=tuple(transform))
+        # self._obj.attrs.update(transform=tuple(transform))
         self._recompute_coords(transform=tuple(transform))
+        self.init_geoparams()
 
     @property
     def projection(self):

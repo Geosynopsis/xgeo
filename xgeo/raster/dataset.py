@@ -157,7 +157,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         self.__warn_depricated('time_coords')
         return self._obj.coords.get(self.time_dim)
 
-    def reproject(self, target_crs, resolution=None, target_height=None,
+    def reproject(self, target_crs, resolutions=None, target_height=None,
                   target_width=None, resampling=enums.Resampling.nearest,
                   source_nodata=0, target_nodata=0, memory_limit=0,
                   threads=os.cpu_count()):
@@ -172,8 +172,8 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
         target_crs: int or string or dict
             Target projection/CRS system the DataSet should be reprojected to
 
-        resolution: int or float (Optional)
-            Target resolution
+        resolutions: tuple (int or float, int or float) (Optional)
+            Target resolution (xres, yres)
 
         resampling: rasterio.warp.Resampling or string
             Resampling method to be used. Default is 'nearest'
@@ -218,7 +218,7 @@ class XGeoDatasetAccessor(XGeoBaseAccessor):
             out_ds.append({
                 var_key: var_value.geo.reproject(
                     target_crs,
-                    resolution=resolution,
+                    resolutions=resolutions,
                     target_height=target_height,
                     target_width=target_width,
                     resampling=resampling,
